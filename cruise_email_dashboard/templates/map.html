@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block header_title %}Bus Stop Map{% endblock %}
+{% block header_subtitle %}Live stop overview with linked hotel markers{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center gap-3">
+    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+        <input id="toggleHotels" type="checkbox" checked class="h-4 w-4 rounded border-gray-300 text-indigo-600">
+        Show hotels
+    </label>
+</div>
+<div id="busMap" class="h-[650px] rounded-xl shadow"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const map = L.map("busMap").setView([36.396, 25.455], 13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+const stopLayer = L.layerGroup().addTo(map);
+const hotelLayer = L.layerGroup().addTo(map);
+fetch("/map/data").then((response) => response.json()).then((data) => {
+    const stopsById = {};
+    data.bus_stops.forEach((stop) => {
+        stopsById[stop.id] = stop;
+        const popup = `<strong>${stop.name}</strong><br>${stop.address}<br>${stop.description || ""}<br>Pickup: ${stop.pickup_time}<br><a class="text-indigo-600" href="${stop.maps_url}" target="_blank">Open map</a>`;
+        L.marker([stop.latitude, stop.longitude]).bindPopup(popup).addTo(stopLayer);
+    });
+    data.hotels.forEach((hotel) => {
+        const marker = L.circleMarker([hotel.latitude, hotel.longitude], { radius: 5, color: "#f97316" }).bindPopup(hotel.name);
+        marker.addTo(hotelLayer);
+        const stop = stopsById[hotel.bus_stop_id];
+        if (stop) {
+            L.polyline([[hotel.latitude, hotel.longitude], [stop.latitude, stop.longitude]], { color: "#94a3b8", dashArray: "4 4" }).addTo(hotelLayer);
+        }
+    });
+});
+document.getElementById("toggleHotels").addEventListener("change", (event) => {
+    if (event.target.checked) {
+        map.addLayer(hotelLayer);
+    } else {
+        map.removeLayer(hotelLayer);
+    }
+});
+</script>
+{% endblock %}

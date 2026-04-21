@@ -1,0 +1,16 @@
+Agapite/i {customer_name},
+
+Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, {booking_type}, gia {num_adults}.
+
+Tha thelame na sas prosferoume paralavi apo ena simio pio konta sto {hotel_name}.
+
+Parakalo vreite parakato ton syndesmo gia to simio paralavis. Einai {bus_stop_description}. To megalo kokkino londinezo double-decker leoforeio mas tha einai ekei stis {pickup_time} gia na sas paralavei.
+
+{maps_url}
+
+Parakalo simeioste oti oles oi paralaves sto Sunny Beach ginontai apo ton kentriko dromo. To leoforeio tha kineitai apo Vorras pros Noto, apo to Sveti Vlas pros to Nessebar. Parakalo perimenete stin plevra tou dromou apo tin opoia tha erxetai to leoforeio (plevra Vorras/Vlas).
+
+Sas parakaloume na apantisete se auto to email gia na epivevaiosete to simio kai tin ora paralavis.
+
+Me ektimisi,
+VIP Catamaran

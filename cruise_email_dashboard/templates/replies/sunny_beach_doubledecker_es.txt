@@ -1,0 +1,16 @@
+Estimado/a {customer_name},
+
+Le agradecemos su reserva para {cruise_date}, {cruise_day}, {booking_type}, para {num_adults}.
+
+Nos gustaria ofrecerle recogida desde un punto mas cercano a {hotel_name}.
+
+Adjuntamos el enlace al punto de recogida. Es {bus_stop_description}. Nuestro gran autobus rojo de dos pisos estilo Londres estara alli a las {pickup_time} para recogerle.
+
+{maps_url}
+
+Tenga en cuenta que todas las recogidas en Sunny Beach se realizan desde la carretera principal. El autobus viajara de norte a sur, desde Sveti Vlas hacia Nessebar. Espere en el lado de la carretera desde el que vendra el autobus (lado norte/Vlas).
+
+Le rogamos responder a este correo para confirmar el punto y la hora de recogida.
+
+Saludos cordiales,
+VIP Catamaran

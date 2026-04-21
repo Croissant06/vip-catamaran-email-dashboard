@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from cruise_email_dashboard.database.models import EmailLog, VehicleType
+
+REPLIES_DIR = Path(__file__).resolve().parents[1] / "templates" / "replies"
+SUPPORTED_LANGUAGES = {"en", "es", "fr", "de", "it", "el"}
+
+
+def available_template_files() -> list[Path]:
+    return sorted(REPLIES_DIR.glob("*.txt"))
+
+
+def _template_variant(email_log: EmailLog) -> str:
+    stop = email_log.assigned_bus_stop
+    city_name = stop.city.name if stop and stop.city else ""
+    vehicle_type = stop.vehicle_type if stop else VehicleType.doubledecker
+    if city_name == "Obzor":
+        return "obzor"
+    if city_name == "Pomorie":
+        return "pomorie"
+    if vehicle_type == VehicleType.minibus:
+        return "sunny_beach_minibus"
+    return "sunny_beach_doubledecker"
+
+
+def template_path(variant: str, language: str) -> Path:
+    return REPLIES_DIR / f"{variant}_{language}.txt"
+
+
+def load_template(variant: str, language: str) -> tuple[str, str, str]:
+    """Load the variant/language reply template with a safe English fallback.
+
+    Templates are stored as plain text files so admin edits take effect immediately.
+    Each generated reply therefore reads the file fresh from disk and falls back to the
+    English version of the same variant if the requested translation is missing.
+    """
+
+    requested = (language or "en").lower()
+    fallback_note = ""
+    if requested not in SUPPORTED_LANGUAGES or not template_path(variant, requested).exists():
+        fallback_note = f"Template for '{variant}/{requested}' not found; fell back to English."
+        requested = "en"
+    return template_path(variant, requested).read_text(encoding="utf-8"), requested, fallback_note
+
+
+def _booking_type_label(email_log: EmailLog) -> str:
+    labels = {
+        "MORNING": "Morning VIP Catamaran",
+        "AFTERNOON": "Afternoon VIP Catamaran",
+        "SUNSET": "Sunset Cruise - VIP Catamaran",
+        "ANASTASIA": "Anastasia",
+        "OBZOR": "Obzor & Old Nessebar VIP Catamaran",
+        "POMORIE": "Pomorie VIP Catamaran",
+    }
+    return labels.get(email_log.booking_type, email_log.booking_type or "VIP Catamaran")
+
+
+def _format_context(email_log: EmailLog) -> dict[str, str]:
+    stop = email_log.assigned_bus_stop
+    hotel = email_log.detected_hotel
+    cruise_date = email_log.cruise_date.strftime("%d %B %Y") if email_log.cruise_date else "your cruise date"
+    cruise_day = email_log.cruise_date.strftime("%A") if email_log.cruise_date else "scheduled day"
+    return {
+        "customer_name": email_log.sender_name or "Guest",
+        "cruise_date": cruise_date,
+        "cruise_day": cruise_day,
+        "booking_type": _booking_type_label(email_log),
+        "num_adults": str(email_log.num_adults or ""),
+        "hotel_name": hotel.name if hotel else email_log.raw_hotel_extraction or "your hotel",
+        "bus_stop_name": stop.name if stop else "",
+        "bus_stop_address": stop.address if stop else "",
+        "bus_stop_description": stop.description if stop and stop.description else (stop.name if stop else ""),
+        "pickup_time": email_log.pickup_time_text or "To be confirmed",
+        "maps_url": stop.maps_url if stop and stop.maps_url else "",
+    }
+
+
+def build_reply(email_log: EmailLog) -> tuple[str, str, str]:
+    template, chosen_language, warning_note = load_template(_template_variant(email_log), email_log.detected_language)
+    return template.format(**_format_context(email_log)), chosen_language, warning_note
+
+
+def regenerate_email_draft(email_log: EmailLog) -> None:
+    """Rebuild the outbound draft using the correct city and vehicle template family.
+
+    Keeping reply generation centralized matters more now because different resorts use
+    different instructions, different vehicles, and even different operational rules.
+    Reusing this helper ensures manual reassignment in the UI produces the same style of
+    reply as automatic processing during IMAP polling.
+    """
+
+    stop = email_log.assigned_bus_stop
+    if not stop:
+        email_log.draft_reply = ""
+        return
+    reply, template_language, warning_note = build_reply(email_log)
+    email_log.draft_reply = reply
+    email_log.template_language = template_language
+    email_log.warning_note = "\n".join(part for part in [email_log.warning_note, warning_note] if part).strip()

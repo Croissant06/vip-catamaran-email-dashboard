@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block header_title %}Inbox{% endblock %}
+{% block header_subtitle %}Incoming customer requests and automated assignments{% endblock %}
+{% block content %}
+<form method="get" class="mb-6 grid gap-3 rounded-xl bg-white p-4 shadow md:grid-cols-4">
+    <select name="status" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">All statuses</option>
+        {% for item in ["pending", "sent", "flagged", "manual"] %}
+        <option value="{{ item }}" {% if filters.status == item %}selected{% endif %}>{{ item.title() }}</option>
+        {% endfor %}
+    </select>
+    <input type="date" name="start_date" value="{{ filters.start_date }}" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <input type="date" name="end_date" value="{{ filters.end_date }}" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <select name="language" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">All languages</option>
+        {% for item in languages %}
+        <option value="{{ item }}" {% if filters.language == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 md:col-span-4 md:justify-self-start">Apply filters</button>
+</form>
+<div class="overflow-x-auto rounded-xl bg-white shadow">
+    <table class="min-w-full text-sm">
+        <thead class="bg-gray-50 text-left text-gray-500">
+            <tr>
+                <th class="px-4 py-3">Received</th>
+                <th class="px-4 py-3">Sender</th>
+                <th class="px-4 py-3">Subject</th>
+                <th class="px-4 py-3">Hotel</th>
+                <th class="px-4 py-3">Bus Stop</th>
+                <th class="px-4 py-3">Pickup Time</th>
+                <th class="px-4 py-3">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for email in emails %}
+            <tr onclick="window.location='/inbox/{{ email.id }}'" class="border-t even:bg-gray-50 hover:bg-indigo-50 cursor-pointer {% if email.is_new %}border-l-4 border-l-indigo-500{% endif %}">
+                <td class="px-4 py-3">{{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="px-4 py-3">{{ email.sender_name }}<div class="text-xs text-gray-500">{{ email.sender_email }}</div></td>
+                <td class="px-4 py-3">{{ email.subject }}</td>
+                <td class="px-4 py-3">{{ email.detected_hotel.name if email.detected_hotel else "Not matched" }}</td>
+                <td class="px-4 py-3">{{ email.assigned_bus_stop.name if email.assigned_bus_stop else "Not assigned" }}</td>
+                <td class="px-4 py-3">{{ email.pickup_time_text or "N/A" }}</td>
+                <td class="px-4 py-3">{% include "_status_badge.html" %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block header_title %}Home{% endblock %}
+{% block header_subtitle %}Analytics overview and recent activity{% endblock %}
+{% block content %}
+<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Emails received today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ total_today }}</div></div>
+    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Emails sent today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ sent_today }}</div></div>
+    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Flagged emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ flagged }}</div></div>
+    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Average response time</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ avg_response }}</div></div>
+</div>
+<div class="mt-6 grid gap-6 xl:grid-cols-3">
+    <div class="rounded-xl bg-white p-6 shadow xl:col-span-2">
+        <h2 class="mb-4 text-lg font-semibold">Last 7 Days</h2>
+        <canvas id="emailsChart" height="120"></canvas>
+    </div>
+    <div class="rounded-xl bg-white p-6 shadow">
+        <h2 class="mb-4 text-lg font-semibold">Languages</h2>
+        <canvas id="languagesChart" height="220"></canvas>
+    </div>
+</div>
+<div class="mt-6 rounded-xl bg-white p-6 shadow">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Recent Activity</h2>
+        <a href="/inbox" class="text-sm text-indigo-600 hover:text-indigo-700">Open inbox</a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="text-left text-gray-500">
+                <tr>
+                    <th class="pb-3">Time</th>
+                    <th class="pb-3">Sender</th>
+                    <th class="pb-3">Subject</th>
+                    <th class="pb-3">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for email in recent_activity %}
+                <tr class="border-t even:bg-gray-50 hover:bg-indigo-50">
+                    <td class="px-2 py-3">{{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                    <td class="px-2 py-3">{{ email.sender_email }}</td>
+                    <td class="px-2 py-3">{{ email.subject }}</td>
+                    <td class="px-2 py-3">{% include "_status_badge.html" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+new Chart(document.getElementById("emailsChart"), {
+    type: "bar",
+    data: {
+        labels: {{ chart_days | tojson }},
+        datasets: [
+            { label: "Sent", data: {{ sent_series | tojson }}, backgroundColor: "#22c55e" },
+            { label: "Flagged", data: {{ flagged_series | tojson }}, backgroundColor: "#ef4444" },
+            { label: "Manual", data: {{ manual_series | tojson }}, backgroundColor: "#6b7280" }
+        ]
+    },
+    options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+});
+new Chart(document.getElementById("languagesChart"), {
+    type: "doughnut",
+    data: { labels: {{ language_labels | tojson }}, datasets: [{ data: {{ language_values | tojson }}, backgroundColor: ["#4f46e5","#f97316","#10b981","#e11d48","#0ea5e9","#8b5cf6"] }] }
+});
+</script>
+{% endblock %}

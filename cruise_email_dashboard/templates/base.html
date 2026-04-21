@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VIP Catamaran Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="bg-gray-50 text-gray-900">
+    {% if current_user %}
+    <div class="min-h-screen md:flex">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full bg-gray-900 text-white transition-transform duration-200 md:translate-x-0">
+            <div class="flex h-full flex-col p-5">
+                <div class="mb-8">
+                    <div class="text-2xl font-bold">VIP Catamaran</div>
+                    <p class="mt-1 text-sm text-gray-400">Pickup Email Operations</p>
+                </div>
+                <nav class="space-y-2 text-sm">
+                    <a href="/" class="flex items-center justify-between px-3 py-2 {% if active_path == '/' %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">
+                        <span>Home</span>
+                    </a>
+                    <a href="/inbox" class="flex items-center justify-between px-3 py-2 {% if active_path.startswith('/inbox') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">
+                        <span>Inbox</span>
+                        <span id="sidebarUnreadBadge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs text-white"></span>
+                    </a>
+                    <a href="/logs" class="block px-3 py-2 {% if active_path.startswith('/logs') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">History & Logs</a>
+                    <a href="/map" class="block px-3 py-2 {% if active_path.startswith('/map') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">Bus Stop Map</a>
+                    {% if current_user.role.value == 'admin' %}
+                    <a href="/admin" class="block px-3 py-2 {% if active_path.startswith('/admin') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">Admin Panel</a>
+                    {% endif %}
+                </nav>
+                <div class="mt-auto rounded-xl bg-gray-800 p-4 text-sm">
+                    <div class="font-medium">{{ current_user.username }}</div>
+                    <div class="text-gray-400">{{ current_user.role.value }}</div>
+                    <a href="/logout" class="mt-3 inline-block text-indigo-300 hover:text-white">Log out</a>
+                </div>
+            </div>
+        </aside>
+        <div class="flex-1 md:ml-72">
+            <header class="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur">
+                <div class="flex items-center justify-between px-4 py-4 md:px-8">
+                    <button id="sidebarToggle" class="rounded-md border border-gray-300 px-3 py-2 text-sm md:hidden">Menu</button>
+                    <div>
+                        <h1 class="text-xl font-semibold">{% block header_title %}Dashboard{% endblock %}</h1>
+                        <p class="text-sm text-gray-500">{% block header_subtitle %}VIP Catamaran operations{% endblock %}</p>
+                    </div>
+                    <div class="text-sm text-gray-500">Live inbox monitoring</div>
+                </div>
+            </header>
+            <main class="px-4 py-6 md:px-8">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    {% else %}
+    {% block auth_content %}{% endblock %}
+    {% endif %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

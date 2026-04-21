@@ -1,0 +1,184 @@
+INFO:     Started server process [28492]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Email poller cycle failed: b'[AUTHENTICATIONFAILED] Authentication failed.'
+Traceback (most recent call last):
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 192, in poll_forever
+    new_count = await asyncio.to_thread(_poll)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 188, in _poll
+    count = poll_inbox_once(db)
+  File "C:\Users\Pres\Documents\New project\cruise_email_dashboard\services\email_poller.py", line 150, in poll_inbox_once
+    mailbox.login(settings.imap_user, settings.imap_password)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Pres\AppData\Local\Programs\Python\Python313\Lib\imaplib.py", line 621, in login
+    raise self.error(dat[-1])
+imaplib.IMAP4.error: b'[AUTHENTICATIONFAILED] Authentication failed.'

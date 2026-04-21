@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block header_title %}Email Detail{% endblock %}
+{% block header_subtitle %}Review, adjust, and send a reply{% endblock %}
+{% block content %}
+<div class="grid gap-6 xl:grid-cols-2">
+    <div class="rounded-xl bg-white p-6 shadow">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold">{{ email.subject }}</h2>
+            {% include "_status_badge.html" %}
+        </div>
+        <div class="space-y-2 text-sm text-gray-600">
+            <div><span class="font-medium text-gray-800">From:</span> {{ email.sender_name }} &lt;{{ email.sender_email }}&gt;</div>
+            <div><span class="font-medium text-gray-800">Received:</span> {{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</div>
+            <div><span class="font-medium text-gray-800">Detected language:</span> {{ email.detected_language }}</div>
+            <div><span class="font-medium text-gray-800">Booking number:</span> {{ email.booking_number or "N/A" }}</div>
+            <div><span class="font-medium text-gray-800">GYG ref:</span> {{ email.gyg_ref or "N/A" }}</div>
+            <div><span class="font-medium text-gray-800">Customer phone:</span> {{ email.customer_phone or "N/A" }}</div>
+            <div><span class="font-medium text-gray-800">Cruise date:</span> {{ email.cruise_date.isoformat() if email.cruise_date else "N/A" }}</div>
+            <div><span class="font-medium text-gray-800">Booking type:</span> {{ email.booking_type or "N/A" }}</div>
+            {% if email.warning_note %}<div class="rounded-md bg-amber-50 px-3 py-2 text-amber-700">{{ email.warning_note }}</div>{% endif %}
+        </div>
+        <div class="mt-6 rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700 whitespace-pre-wrap">{{ email.full_body }}</div>
+        {% if current_user.role.value == "admin" %}
+        <details class="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+            <summary class="cursor-pointer font-medium text-slate-900">Debug Info</summary>
+            <div class="mt-3 space-y-2">
+                <div><span class="font-medium">Raw hotel extraction:</span> {{ email.raw_hotel_extraction or "N/A" }}</div>
+                <div><span class="font-medium">Extraction source:</span> {{ email.extraction_source or "N/A" }}</div>
+            </div>
+        </details>
+        {% endif %}
+    </div>
+    <div class="space-y-6">
+        <div class="rounded-xl bg-white p-6 shadow">
+            <form method="post" action="/inbox/{{ email.id }}/reassign" class="space-y-4">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Detected hotel</label>
+                    <select name="detected_hotel_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        {% for hotel in hotels %}
+                        <option value="{{ hotel.id }}" {% if email.detected_hotel and hotel.id == email.detected_hotel.id %}selected{% endif %}>{{ hotel.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Assigned bus stop</label>
+                    <select name="assigned_bus_stop_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        {% for stop in stops %}
+                        <option value="{{ stop.id }}" {% if email.assigned_bus_stop and stop.id == email.assigned_bus_stop.id %}selected{% endif %}>{{ stop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Draft reply</label>
+                    <textarea name="draft_reply" rows="12" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ email.draft_reply }}</textarea>
+                </div>
+                <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Reassign</button>
+            </form>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <form method="post" action="/inbox/{{ email.id }}/send">
+                <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Send Reply</button>
+            </form>
+            <form method="post" action="/inbox/{{ email.id }}/manual">
+                <button type="submit" class="rounded-md bg-red-500 px-4 py-2 text-white transition duration-150 hover:bg-red-600">Flag as Manual</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

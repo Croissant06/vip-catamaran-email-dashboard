@@ -1,0 +1,16 @@
+Dear {customer_name},
+
+We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, for {num_adults}!
+
+We would like to offer to pick you up from a pickup point closer to {hotel_name}.
+
+Please find attached a link to the pickup point. It is {bus_stop_description}. Our big red London double-decker bus will be there at {pickup_time} to collect you.
+
+{maps_url}
+
+Please note that all pick ups in Sunny Beach are from the main road. The bus will be travelling from the North to the South - from Sveti Vlas towards Nessebar. Please wait on the side of the road that the bus will be coming FROM (the north/Vlas side).
+
+We kindly ask you to reply to this email to confirm the pickup point and time.
+
+Kind Regards,
+VIP Catamaran

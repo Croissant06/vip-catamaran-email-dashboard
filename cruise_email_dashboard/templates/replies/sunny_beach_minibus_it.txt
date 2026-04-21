@@ -1,0 +1,12 @@
+Caro/a {customer_name},
+
+La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, {booking_type}, per {num_adults}.
+
+Il nostro minibus la prelevera da {bus_stop_name} alle {pickup_time}.
+
+{maps_url}
+
+La preghiamo di rispondere a questa e-mail per confermare punto e orario di prelievo.
+
+Cordiali saluti,
+VIP Catamaran

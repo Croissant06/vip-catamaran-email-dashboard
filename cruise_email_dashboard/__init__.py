@@ -1,0 +1,1 @@
+"""Cruise email dashboard package."""
