@@ -1,0 +1,10 @@
+Agapite/i {customer_name},
+
+Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, gia {num_adults}.
+
+O odigos mas kai to meso metaforas tha sas perimenoun exo apo to {bus_stop_name} stis {pickup_time}. Tha anagnorisete to oxima apo tin pinakida "VIP Catamaran" sto brostino parathyro.
+
+Sas parakaloume na apantisete se auto to email gia na epivevaiosete to simio kai tin ora paralavis.
+
+Me ektimisi,
+VIP Catamaran

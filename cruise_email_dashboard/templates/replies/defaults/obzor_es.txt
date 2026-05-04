@@ -1,0 +1,10 @@
+Estimado/a {customer_name},
+
+Le agradecemos su reserva para {cruise_date}, {cruise_day}, para {num_adults}.
+
+Nuestro guia y transporte le estaran esperando fuera de {bus_stop_name} a las {pickup_time}. Puede identificar el vehiculo por el cartel "VIP Catamaran" en la ventana delantera.
+
+Le rogamos responder a este correo para confirmar el punto y la hora de recogida.
+
+Saludos cordiales,
+VIP Catamaran

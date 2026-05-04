@@ -1,0 +1,16 @@
+Sehr geehrte/r {customer_name},
+
+Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fuer {num_adults}.
+
+Wir moechten Ihnen eine Abholung an einem Punkt naeher bei {hotel_name} anbieten.
+
+Hier finden Sie den Link zum Abholpunkt. Es ist {bus_stop_description}. Unser grosser roter Londoner Doppeldeckerbus wird dort um {pickup_time} auf Sie warten.
+
+{maps_url}
+
+Bitte beachten Sie, dass alle Abholungen in Sunny Beach an der Hauptstrasse erfolgen. Der Bus faehrt von Norden nach Sueden, von Sveti Vlas nach Nessebar. Bitte warten Sie auf der Strassenseite, aus der der Bus kommen wird (Nord-/Vlas-Seite).
+
+Bitte antworten Sie auf diese E-Mail, um Abholpunkt und Uhrzeit zu bestaetigen.
+
+Mit freundlichen Gruessen,
+VIP Catamaran

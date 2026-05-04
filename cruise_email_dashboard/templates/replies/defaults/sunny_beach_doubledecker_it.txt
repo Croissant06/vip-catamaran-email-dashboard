@@ -1,0 +1,16 @@
+Caro/a {customer_name},
+
+La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, {booking_type}, per {num_adults}.
+
+Vorremmo offrirle un punto di prelievo piu vicino a {hotel_name}.
+
+Di seguito trova il link al punto di prelievo. Si tratta di {bus_stop_description}. Il nostro grande autobus rosso a due piani stile Londra sara li alle {pickup_time} per venirla a prendere.
+
+{maps_url}
+
+La preghiamo di notare che tutti i prelievi a Sunny Beach avvengono dalla strada principale. L'autobus viaggia da nord a sud, da Sveti Vlas verso Nessebar. Attenda sul lato della strada da cui arrivera l'autobus (lato nord/Vlas).
+
+La preghiamo di rispondere a questa e-mail per confermare punto e orario di prelievo.
+
+Cordiali saluti,
+VIP Catamaran

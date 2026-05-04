@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from cruise_email_dashboard.database.db import Base, engine, init_db, session_scope
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, EmailStatus, Hotel, Schedule, User, UserRole, VehicleType
 from cruise_email_dashboard.services.auth import hash_password
-from cruise_email_dashboard.services.reply_generator import regenerate_email_draft
+from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 
 
@@ -75,7 +75,7 @@ def seed() -> None:
 
         sunny_hotels = [
             ("Helena Park", "Helena, Zora, The Helena Park hotel", "Helena / Zora - Main Road Bus Stop"),
-            ("Best Western / Sveshest", "Best Western,Sveshest", "Hotel Best Western / Sveshest"),
+            ("Best Western / Sveshest", "Best Western,Sveshest,AluaSoul Sunny Beach,AluaSoul", "Hotel Best Western / Sveshest"),
             ("Royal Sun / Arda", "Royal Sun,Arda", "Royal Sun / Arda Bus Stop"),
             ("Black Sea Hotel", "Black Sea", "Black Sea Hotel Bus Stop"),
             ("Belleville / Cacao", "Belleville,Cacao", "Belleville / Cacao Bus Stop"),
@@ -174,6 +174,7 @@ def seed() -> None:
                 "total_price": "170 EUR",
                 "customer_phone": "+447700900111",
                 "detected_language": "en",
+                "raw_customer_name_extraction": "William James",
                 "raw_hotel_extraction": "Helena Park",
                 "extraction_source": "notes_hotel_field",
                 "status": EmailStatus.pending,
@@ -194,6 +195,7 @@ def seed() -> None:
                 "total_price": "320 EUR",
                 "customer_phone": "+359888123456",
                 "detected_language": "de",
+                "raw_customer_name_extraction": "Sofia Martin",
                 "raw_hotel_extraction": "Sunrise",
                 "extraction_source": "options_field",
                 "status": EmailStatus.sent,
@@ -214,6 +216,7 @@ def seed() -> None:
                 "total_price": "150 EUR",
                 "customer_phone": "+359887765432",
                 "detected_language": "en",
+                "raw_customer_name_extraction": "Elena Petrova",
                 "raw_hotel_extraction": "Saint George",
                 "extraction_source": "notes_hotel_field",
                 "status": EmailStatus.flagged,
@@ -234,11 +237,12 @@ def seed() -> None:
                 "total_price": "255 EUR",
                 "customer_phone": "+34999999999",
                 "detected_language": "es",
+                "raw_customer_name_extraction": "Maria Lopez",
                 "raw_hotel_extraction": "Spiders Pub",
                 "extraction_source": "notes_freeform",
                 "status": EmailStatus.manual,
                 "received_at": datetime.now(UTC).replace(tzinfo=None) - timedelta(days=2),
-                "warning_note": "Hotel name not found in booking — manual assignment required",
+                "warning_note": "Booking references Spiders Pub which is not a hotel. Customer may have entered wrong hotel name. Manual assignment required.",
             },
         ]
 
@@ -265,6 +269,7 @@ def seed() -> None:
                 booking_number=item["booking_number"],
                 gyg_ref=item["gyg_ref"],
                 total_price=item["total_price"],
+                raw_customer_name_extraction=item["raw_customer_name_extraction"],
                 raw_hotel_extraction=item["raw_hotel_extraction"],
                 extraction_source=item["extraction_source"],
                 status=item["status"],
@@ -274,7 +279,7 @@ def seed() -> None:
             )
             if bus_stop:
                 resolution = resolve_pickup_schedule(db, bus_stop, email.booking_type, email.cruise_date)
-                email.pickup_time_text = resolution.schedule.pickup_time.strftime("%H:%M") if resolution.schedule else "To be confirmed"
+                email.pickup_time_text = resolution.schedule.pickup_time.strftime("%H:%M") if resolution.schedule else MISSING_PICKUP_TIME_PLACEHOLDER
                 email.warning_note = "\n".join(part for part in [email.warning_note, resolution.warning_note] if part).strip()
                 regenerate_email_draft(email)
             db.add(email)

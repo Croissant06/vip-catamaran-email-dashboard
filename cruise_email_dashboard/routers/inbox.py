@@ -10,7 +10,7 @@ from cruise_email_dashboard.database.db import get_db
 from cruise_email_dashboard.database.models import BusStop, EmailLog, EmailStatus, Hotel, User
 from cruise_email_dashboard.dependencies import get_current_user, template_context, templates
 from cruise_email_dashboard.services.mailer import send_reply
-from cruise_email_dashboard.services.reply_generator import regenerate_email_draft
+from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 
 router = APIRouter(prefix="/inbox", tags=["inbox"])
@@ -76,9 +76,14 @@ def email_detail(request: Request, email_id: int, db: Session = Depends(get_db),
 @router.post("/{email_id}/send")
 def send_email_reply(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
-    send_reply(email)
-    email.status = EmailStatus.sent
-    email.sent_at = datetime.now(UTC).replace(tzinfo=None)
+    try:
+        send_reply(email)
+        email.status = EmailStatus.sent
+        email.sent_at = datetime.now(UTC).replace(tzinfo=None)
+    except Exception as exc:
+        if email.status != EmailStatus.send_failed:
+            email.status = EmailStatus.send_failed
+        email.send_error = str(exc)
     email.is_new = False
     db.commit()
     return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
@@ -106,7 +111,11 @@ def reassign_email(
     email.detected_hotel = db.query(Hotel).filter(Hotel.id == detected_hotel_id).first()
     email.assigned_bus_stop = db.query(BusStop).filter(BusStop.id == assigned_bus_stop_id).first()
     schedule_resolution = resolve_pickup_schedule(db, email.assigned_bus_stop, email.booking_type, email.cruise_date)
-    email.pickup_time_text = schedule_resolution.schedule.pickup_time.strftime("%H:%M") if schedule_resolution.schedule else "To be confirmed"
+    email.pickup_time_text = (
+        schedule_resolution.schedule.pickup_time.strftime("%H:%M")
+        if schedule_resolution.schedule
+        else MISSING_PICKUP_TIME_PLACEHOLDER
+    )
     email.warning_note = schedule_resolution.warning_note
     regenerate_email_draft(email)
     if draft_reply.strip():

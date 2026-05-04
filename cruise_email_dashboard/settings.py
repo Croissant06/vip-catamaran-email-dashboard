@@ -14,15 +14,17 @@ load_dotenv(ENV_PATH)
 
 @dataclass
 class Settings:
-    imap_host: str = os.getenv("IMAP_HOST", "https://server16.superhosting.bg:2096/")
+    imap_host: str = os.getenv("IMAP_HOST", "mail.vipcatamaran.com")
     imap_port: int = int(os.getenv("IMAP_PORT", "993"))
     imap_user: str = os.getenv("IMAP_USER", "bookings@vipcatamaran.com")
     imap_password: str = os.getenv("IMAP_PASSWORD", "")
-    smtp_host: str = os.getenv("SMTP_HOST", "https://server16.superhosting.bg:2096/")
+    smtp_host: str = os.getenv("SMTP_HOST", "mail.vipcatamaran.com")
     smtp_port: int = int(os.getenv("SMTP_PORT", "465"))
     smtp_user: str = os.getenv("SMTP_USER", "bookings@vipcatamaran.com")
     smtp_password: str = os.getenv("SMTP_PASSWORD", "")
     poll_interval_minutes: int = int(os.getenv("POLL_INTERVAL_MINUTES", "5"))
+    poll_backoff_minutes: int = int(os.getenv("POLL_BACKOFF_MINUTES", "30"))
+    mail_timeout_seconds: int = int(os.getenv("MAIL_TIMEOUT_SECONDS", "10"))
     fuzzy_match_threshold: int = int(os.getenv("FUZZY_MATCH_THRESHOLD", "80"))
     secret_key: str = os.getenv("SECRET_KEY", "change-me")
     safe_mode: bool = os.getenv("SAFE_MODE", "true").lower() == "true"

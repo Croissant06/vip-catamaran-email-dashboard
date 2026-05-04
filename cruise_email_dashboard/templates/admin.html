@@ -7,10 +7,16 @@
         <div class="rounded-xl bg-white p-6 shadow">
             <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
             <form method="post" action="/admin/hotels" class="space-y-3">
-                <input name="name" placeholder="Hotel name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <input name="aliases" placeholder="Aliases, comma separated" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <select name="bus_stop_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    {% for stop in bus_stops %}<option value="{{ stop.id }}">{{ stop.name }}</option>{% endfor %}
+                <input name="name" placeholder="Hotel name" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
+                <select name="city_id" class="hotel-city-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <option value="">City (required)</option>
+                    {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
+                </select>
+                <select name="bus_stop_id" class="hotel-stop-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="">
+                    <option value="">Bus stop (optional)</option>
+                    {% for stop in bus_stops %}<option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}">{{ stop.name }}</option>{% endfor %}
                 </select>
                 <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Hotel</button>
             </form>
@@ -18,11 +24,22 @@
         <div class="rounded-xl bg-white p-6 shadow">
             <h2 class="mb-4 text-lg font-semibold">Add Bus Stop</h2>
             <form method="post" action="/admin/bus-stops" class="space-y-3">
-                <input name="name" placeholder="Stop name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <input name="address" placeholder="Address" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="name" placeholder="Stop name" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="address" placeholder="Address" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <select name="city_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <option value="">City (required)</option>
+                    {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
+                </select>
+                <select name="vehicle_type" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    {% for vehicle_type in vehicle_types %}
+                    <option value="{{ vehicle_type.value }}">{{ vehicle_type.value }}</option>
+                    {% endfor %}
+                </select>
+                <textarea name="description" placeholder="Landmark description used in replies" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <input name="maps_url" placeholder="Google Maps URL" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="grid gap-3 md:grid-cols-2">
-                    <input type="number" step="0.000001" name="latitude" placeholder="Latitude" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                    <input type="number" step="0.000001" name="longitude" placeholder="Longitude" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <input type="number" step="0.000001" name="latitude" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <input type="number" step="0.000001" name="longitude" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 </div>
                 <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Stop</button>
             </form>
@@ -30,14 +47,16 @@
         <div class="rounded-xl bg-white p-6 shadow">
             <h2 class="mb-4 text-lg font-semibold">Add Schedule</h2>
             <form method="post" action="/admin/schedules" class="space-y-3">
-                <select name="bus_stop_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="bus_stop_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for stop in bus_stops %}<option value="{{ stop.id }}">{{ stop.name }}</option>{% endfor %}
                 </select>
-                <input type="time" name="pickup_time" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <input name="season_label" placeholder="Season label (summer, winter, default)" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input type="time" name="pickup_time" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="season_label" placeholder="Season label (default, morning, sunset, september_day)" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="valid_days" placeholder="Valid weekdays as 0,1,2,3,4,5,6" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <p class="text-xs text-gray-500">0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun</p>
                 <div class="grid gap-3 md:grid-cols-2">
-                    <input type="date" name="valid_from" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="date" name="valid_to" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="valid_from" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="valid_to" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Schedule</button>
             </form>
@@ -47,7 +66,11 @@
         <div class="rounded-xl bg-white p-6 shadow">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-lg font-semibold">Mailbox Status</h2>
-                <button type="button" id="refreshMailboxStatus" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Refresh</button>
+                <div class="flex gap-2">
+                    <button type="button" id="refreshMailboxStatus" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Refresh</button>
+                    <button type="button" id="runPollNow" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Run Poll Now</button>
+                    <button type="button" id="resetBackoff" class="rounded-md bg-red-500 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-red-600">Reset Backoff</button>
+                </div>
             </div>
             <div class="space-y-3 text-sm">
                 <div class="flex items-center gap-3">
@@ -60,18 +83,45 @@
                     <span class="font-medium">SMTP</span>
                     <span id="smtpStatusText" class="text-gray-500">Checking...</span>
                 </div>
+                <div class="rounded-md bg-gray-50 p-4 text-gray-700">
+                    <div><span class="font-medium">Last successful poll:</span> <span id="lastPollSuccess">Never</span></div>
+                    <div><span class="font-medium">Last error:</span> <span id="lastPollError">None</span></div>
+                    <div><span class="font-medium">Backoff active:</span> <span id="backoffActive">No</span></div>
+                    <div><span class="font-medium">Consecutive failures:</span> <span id="consecutiveFailures">0</span></div>
+                </div>
             </div>
         </div>
         <div class="rounded-xl bg-white p-6 shadow">
-            <h2 class="mb-4 text-lg font-semibold">Reply Templates</h2>
+            <div class="mb-4 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold">Reply Templates</h2>
+                    <p class="mt-1 text-sm text-gray-500">Each template can be edited live or reset from its backup copy.</p>
+                </div>
+            </div>
+            <div class="mb-4 rounded-lg bg-slate-50 p-4">
+                <h3 class="mb-2 text-sm font-semibold text-slate-900">Available placeholders</h3>
+                <div class="flex flex-wrap gap-2 text-xs text-slate-700">
+                    {% for placeholder in template_placeholders %}
+                    <code class="rounded bg-white px-2 py-1">{{ placeholder }}</code>
+                    {% endfor %}
+                </div>
+            </div>
             <div class="space-y-4">
-                {% for template_name, content in reply_templates.items() %}
-                <form method="post" action="/admin/templates/{{ template_name }}" class="rounded-lg border border-gray-200 p-4">
-                    <div class="mb-2 flex items-center justify-between">
-                        <h3 class="font-medium">{{ template_name }}</h3>
-                        <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Save</button>
+                {% for template in reply_templates %}
+                <form method="post" action="/admin/templates/{{ template.name }}" class="rounded-lg border border-gray-200 p-4">
+                    <div class="mb-2 flex items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-medium">{{ template.name }}</h3>
+                            <p class="text-xs text-gray-500">
+                                {% if template.has_default %}Default backup ready{% else %}No backup copy found{% endif %}
+                            </p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Save</button>
+                            <button formaction="/admin/templates/{{ template.name }}/reset" formmethod="post" class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition duration-150 hover:bg-gray-300" {% if not template.has_default %}disabled{% endif %}>Reset</button>
+                        </div>
                     </div>
-                    <textarea name="content" rows="8" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ content }}</textarea>
+                    <textarea name="content" rows="14" class="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ template.content }}</textarea>
                 </form>
                 {% endfor %}
             </div>
@@ -79,19 +129,23 @@
         <div class="rounded-xl bg-white p-6 shadow">
             <h2 class="mb-4 text-lg font-semibold">Settings</h2>
             <form method="post" action="/admin/settings" class="space-y-3">
-                <input name="imap_host" value="{{ settings.imap_host }}" placeholder="IMAP host" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="number" name="imap_port" value="{{ settings.imap_port }}" placeholder="IMAP port" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="imap_user" value="{{ settings.imap_user }}" placeholder="IMAP user" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" name="imap_password" value="{{ settings.imap_password }}" placeholder="IMAP password" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="smtp_host" value="{{ settings.smtp_host }}" placeholder="SMTP host" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="number" name="smtp_port" value="{{ settings.smtp_port }}" placeholder="SMTP port" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="smtp_user" value="{{ settings.smtp_user }}" placeholder="SMTP user" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" name="smtp_password" value="{{ settings.smtp_password }}" placeholder="SMTP password" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="imap_host" value="{{ settings.imap_host }}" placeholder="IMAP host" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" name="imap_port" value="{{ settings.imap_port }}" placeholder="IMAP port" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="imap_user" value="{{ settings.imap_user }}" placeholder="IMAP user" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" name="imap_password" value="{{ settings.imap_password }}" placeholder="IMAP password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="smtp_host" value="{{ settings.smtp_host }}" placeholder="SMTP host" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" name="smtp_port" value="{{ settings.smtp_port }}" placeholder="SMTP port" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="smtp_user" value="{{ settings.smtp_user }}" placeholder="SMTP user" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" name="smtp_password" value="{{ settings.smtp_password }}" placeholder="SMTP password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="grid gap-3 md:grid-cols-2">
-                    <input type="number" name="poll_interval_minutes" value="{{ settings.poll_interval_minutes }}" placeholder="Poll interval" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" name="fuzzy_match_threshold" value="{{ settings.fuzzy_match_threshold }}" placeholder="Threshold" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" name="poll_interval_minutes" value="{{ settings.poll_interval_minutes }}" placeholder="Poll interval" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" name="poll_backoff_minutes" value="{{ settings.poll_backoff_minutes }}" placeholder="Poll backoff minutes" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <input name="secret_key" value="{{ settings.secret_key }}" placeholder="Secret key" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid gap-3 md:grid-cols-2">
+                    <input type="number" name="mail_timeout_seconds" value="{{ settings.mail_timeout_seconds }}" placeholder="Mail timeout seconds" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" name="fuzzy_match_threshold" value="{{ settings.fuzzy_match_threshold }}" placeholder="Threshold" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <input name="secret_key" value="{{ settings.secret_key }}" placeholder="Secret key" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                     <input type="hidden" name="safe_mode" value="false">
                     <input type="checkbox" name="safe_mode" value="true" {% if settings.safe_mode %}checked{% endif %} class="h-4 w-4 rounded border-gray-300 text-indigo-600">
@@ -107,12 +161,20 @@
         <h2 class="mb-3 text-lg font-semibold">Hotels</h2>
         <div class="space-y-2 text-sm">
             {% for hotel in hotels %}
-            <form method="post" action="/admin/hotels/{{ hotel.id }}" class="rounded-md bg-gray-50 p-3 space-y-2">
-                <input name="name" value="{{ hotel.name }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="aliases" value="{{ hotel.aliases }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <select name="bus_stop_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <form method="post" action="/admin/hotels/{{ hotel.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
+                <input name="name" value="{{ hotel.name }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <textarea name="aliases" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ hotel.aliases }}</textarea>
+                <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
+                <select name="city_id" class="hotel-city-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <option value="">City (optional)</option>
+                    {% for city in cities %}
+                    <option value="{{ city.id }}" {% if hotel.city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="bus_stop_id" class="hotel-stop-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="{{ hotel.bus_stop_id or '' }}">
+                    <option value="">Bus stop (optional)</option>
                     {% for stop in bus_stops %}
-                    <option value="{{ stop.id }}" {% if stop.id == hotel.bus_stop_id %}selected{% endif %}>{{ stop.name }}</option>
+                    <option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}" {% if stop.id == hotel.bus_stop_id %}selected{% endif %}>{{ stop.name }}</option>
                     {% endfor %}
                 </select>
                 <div class="flex gap-2">
@@ -127,12 +189,25 @@
         <h2 class="mb-3 text-lg font-semibold">Bus Stops</h2>
         <div class="space-y-2 text-sm">
             {% for stop in bus_stops %}
-            <form method="post" action="/admin/bus-stops/{{ stop.id }}" class="rounded-md bg-gray-50 p-3 space-y-2">
-                <input name="name" value="{{ stop.name }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="address" value="{{ stop.address }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <form method="post" action="/admin/bus-stops/{{ stop.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
+                <input name="name" value="{{ stop.name }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="address" value="{{ stop.address }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="city_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <option value="">City (optional)</option>
+                    {% for city in cities %}
+                    <option value="{{ city.id }}" {% if stop.city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="vehicle_type" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    {% for vehicle_type in vehicle_types %}
+                    <option value="{{ vehicle_type.value }}" {% if stop.vehicle_type.value == vehicle_type.value %}selected{% endif %}>{{ vehicle_type.value }}</option>
+                    {% endfor %}
+                </select>
+                <textarea name="description" rows="3" placeholder="Pickup description" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ stop.description }}</textarea>
+                <input name="maps_url" value="{{ stop.maps_url }}" placeholder="Google Maps URL" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="grid gap-2 md:grid-cols-2">
-                    <input type="number" step="0.000001" name="latitude" value="{{ stop.latitude }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" step="0.000001" name="longitude" value="{{ stop.longitude }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" step="0.000001" name="latitude" value="{{ stop.latitude }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" step="0.000001" name="longitude" value="{{ stop.longitude }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div class="flex gap-2">
                     <button class="rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
@@ -146,17 +221,18 @@
         <h2 class="mb-3 text-lg font-semibold">Schedules</h2>
         <div class="space-y-2 text-sm">
             {% for schedule in schedules %}
-            <form method="post" action="/admin/schedules/{{ schedule.id }}" class="rounded-md bg-gray-50 p-3 space-y-2">
-                <select name="bus_stop_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <form method="post" action="/admin/schedules/{{ schedule.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
+                <select name="bus_stop_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for stop in bus_stops %}
                     <option value="{{ stop.id }}" {% if stop.id == schedule.bus_stop_id %}selected{% endif %}>{{ stop.name }}</option>
                     {% endfor %}
                 </select>
-                <input type="time" name="pickup_time" value="{{ schedule.pickup_time.strftime('%H:%M') }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="season_label" value="{{ schedule.season_label }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="time" name="pickup_time" value="{{ schedule.pickup_time.strftime('%H:%M') }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="season_label" value="{{ schedule.season_label }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="valid_days" value="{{ schedule.valid_days }}" placeholder="Valid weekdays as 0,1,2,3,4,5,6" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="grid gap-2 md:grid-cols-2">
-                    <input type="date" name="valid_from" value="{{ schedule.valid_from.isoformat() if schedule.valid_from else '' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="date" name="valid_to" value="{{ schedule.valid_to.isoformat() if schedule.valid_to else '' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="valid_from" value="{{ schedule.valid_from.isoformat() if schedule.valid_from else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="valid_to" value="{{ schedule.valid_to.isoformat() if schedule.valid_to else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div class="flex gap-2">
                     <button class="rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
@@ -173,7 +249,7 @@
 function setStatus(dotId, textId, status, message) {
     const dot = document.getElementById(dotId);
     const text = document.getElementById(textId);
-    dot.className = `h-3 w-3 rounded-full ${status === "ok" ? "bg-green-500" : "bg-red-500"}`;
+    dot.className = `h-3 w-3 rounded-full ${status === "ok" ? "bg-green-500" : status === "pending" ? "bg-yellow-500" : "bg-red-500"}`;
     text.textContent = message;
 }
 
@@ -185,13 +261,67 @@ async function refreshMailboxStatus() {
         const data = await response.json();
         setStatus("imapStatusDot", "imapStatusText", data.imap, data.imap_message);
         setStatus("smtpStatusDot", "smtpStatusText", data.smtp, data.smtp_message);
+        document.getElementById("lastPollSuccess").textContent = data.last_success || "Never";
+        document.getElementById("lastPollError").textContent = data.last_error || "None";
+        document.getElementById("backoffActive").textContent = data.backoff_active ? "Yes" : "No";
+        document.getElementById("consecutiveFailures").textContent = data.consecutive_failures ?? 0;
     } catch (error) {
         setStatus("imapStatusDot", "imapStatusText", "error", "Mailbox status request failed");
         setStatus("smtpStatusDot", "smtpStatusText", "error", "Mailbox status request failed");
     }
 }
 
+async function postMailboxAction(url) {
+    await fetch(url, { method: "POST" });
+    await refreshMailboxStatus();
+}
+
+function filterHotelStops(form) {
+    const citySelect = form.querySelector(".hotel-city-select");
+    const stopSelect = form.querySelector(".hotel-stop-select");
+    if (!citySelect || !stopSelect) {
+        return;
+    }
+    const selectedCity = citySelect.value;
+    const selectedStop = stopSelect.dataset.selectedStop || stopSelect.value;
+    for (const option of stopSelect.options) {
+        if (!option.value) {
+            option.hidden = false;
+            continue;
+        }
+        const optionCity = option.dataset.cityId || "";
+        const visible = !selectedCity || optionCity === selectedCity;
+        option.hidden = !visible;
+        if (!visible && option.selected) {
+            option.selected = false;
+        }
+    }
+    if (selectedStop) {
+        const match = Array.from(stopSelect.options).find((option) => option.value === selectedStop && !option.hidden);
+        if (match) {
+            match.selected = true;
+        }
+    }
+}
+
+for (const form of document.querySelectorAll("form")) {
+    const citySelect = form.querySelector(".hotel-city-select");
+    if (!citySelect) {
+        continue;
+    }
+    filterHotelStops(form);
+    citySelect.addEventListener("change", () => {
+        const stopSelect = form.querySelector(".hotel-stop-select");
+        if (stopSelect) {
+            stopSelect.dataset.selectedStop = "";
+        }
+        filterHotelStops(form);
+    });
+}
+
 document.getElementById("refreshMailboxStatus")?.addEventListener("click", refreshMailboxStatus);
+document.getElementById("runPollNow")?.addEventListener("click", () => postMailboxAction("/admin/mailbox-status/run-poll"));
+document.getElementById("resetBackoff")?.addEventListener("click", () => postMailboxAction("/admin/mailbox-status/reset-backoff"));
 refreshMailboxStatus();
 </script>
 {% endblock %}

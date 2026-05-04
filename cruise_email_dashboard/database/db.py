@@ -56,6 +56,7 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
     _run_lightweight_migrations()
+    _run_reference_data_fixes()
 
 
 def _run_lightweight_migrations() -> None:
@@ -93,12 +94,15 @@ def _run_lightweight_migrations() -> None:
             "cruise_date": "DATE",
             "cruise_time": "TIME",
             "num_adults": "INTEGER",
+            "num_children": "INTEGER",
             "customer_phone": "VARCHAR(64) NOT NULL DEFAULT ''",
             "booking_number": "VARCHAR(64) NOT NULL DEFAULT ''",
             "gyg_ref": "VARCHAR(64) NOT NULL DEFAULT ''",
             "total_price": "VARCHAR(64) NOT NULL DEFAULT ''",
+            "raw_customer_name_extraction": "VARCHAR(255) NOT NULL DEFAULT ''",
             "raw_hotel_extraction": "VARCHAR(255) NOT NULL DEFAULT ''",
             "extraction_source": "VARCHAR(64) NOT NULL DEFAULT ''",
+            "send_error": "TEXT NOT NULL DEFAULT ''",
         },
     }
 
@@ -110,3 +114,25 @@ def _run_lightweight_migrations() -> None:
             for column_name, column_sql in columns.items():
                 if column_name not in existing_columns:
                     connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"))
+
+
+def _run_reference_data_fixes() -> None:
+    """Apply small production data fixes that should exist in every environment.
+
+    These are not schema changes. They are safe upserts that improve real-world
+    parsing accuracy as new customer wording is discovered in live mailbox traffic.
+    """
+
+    from cruise_email_dashboard.database.models import Hotel
+
+    with session_scope() as db:
+        hotel = db.query(Hotel).filter(Hotel.name == "Best Western / Sveshest").first()
+        if not hotel:
+            return
+
+        aliases = [part.strip() for part in hotel.aliases.split(",") if part.strip()]
+        normalized = {alias.lower() for alias in aliases}
+        for alias in ("AluaSoul Sunny Beach", "AluaSoul"):
+            if alias.lower() not in normalized:
+                aliases.append(alias)
+        hotel.aliases = ",".join(aliases)

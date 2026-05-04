@@ -6,6 +6,7 @@ from cruise_email_dashboard.database.models import EmailLog, VehicleType
 
 REPLIES_DIR = Path(__file__).resolve().parents[1] / "templates" / "replies"
 SUPPORTED_LANGUAGES = {"en", "es", "fr", "de", "it", "el"}
+MISSING_PICKUP_TIME_PLACEHOLDER = "[PICKUP TIME NOT FOUND]"
 
 
 def available_template_files() -> list[Path]:
@@ -72,8 +73,12 @@ def _format_context(email_log: EmailLog) -> dict[str, str]:
         "bus_stop_name": stop.name if stop else "",
         "bus_stop_address": stop.address if stop else "",
         "bus_stop_description": stop.description if stop and stop.description else (stop.name if stop else ""),
-        "pickup_time": email_log.pickup_time_text or "To be confirmed",
+        "pickup_time": email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER,
         "maps_url": stop.maps_url if stop and stop.maps_url else "",
+        "company_name": "VIP Catamaran",
+        "company_email": "bookings@vipcatamaran.com",
+        "company_phone": "",
+        "support_contact_info": "bookings@vipcatamaran.com",
     }
 
 

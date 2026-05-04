@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+import logging
 
 from sqlalchemy.orm import Session
 
 from cruise_email_dashboard.database.models import BusStop, Schedule
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -67,7 +70,11 @@ def resolve_pickup_schedule(
     if city_name == "Pomorie" and target_date.weekday() not in {1, 4}:
         return ScheduleResolution(
             schedule=None,
-            warning_note="Pomorie pickups are Tuesday and Friday only. Please contact the customer to clarify their cruise date.",
+            warning_note=(
+                "Pomorie operates Tuesday and Friday only. "
+                f"Cruise date {target_date.isoformat()} falls on a {target_date.strftime('%A')}. "
+                "Please contact the customer to clarify."
+            ),
         )
 
     exact_matches: list[Schedule] = []
@@ -87,4 +94,6 @@ def resolve_pickup_schedule(
         return ScheduleResolution(schedule=exact_matches[0])
     if fallback_matches:
         return ScheduleResolution(schedule=fallback_matches[0])
-    return ScheduleResolution(schedule=None)
+    warning_note = f"No schedule found for stop {bus_stop.name} with type {(booking_type or 'default').upper()} - manual time entry required"
+    logger.warning("[SCHEDULER] %s", warning_note)
+    return ScheduleResolution(schedule=None, warning_note=warning_note)

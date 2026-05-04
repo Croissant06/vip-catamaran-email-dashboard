@@ -14,6 +14,7 @@ class EmailStatus(str, Enum):
     sent = "sent"
     flagged = "flagged"
     manual = "manual"
+    send_failed = "send_failed"
 
 
 class UserRole(str, Enum):
@@ -106,16 +107,19 @@ class EmailLog(Base):
     cruise_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     cruise_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     num_adults: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    num_children: Mapped[int | None] = mapped_column(Integer, nullable=True)
     customer_phone: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     booking_number: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     gyg_ref: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     total_price: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    raw_customer_name_extraction: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     raw_hotel_extraction: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     extraction_source: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     pickup_time_text: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     draft_reply: Mapped[str] = mapped_column(Text, default="", nullable=False)
     status: Mapped[EmailStatus] = mapped_column(SqlEnum(EmailStatus), default=EmailStatus.pending, nullable=False)
     warning_note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    send_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

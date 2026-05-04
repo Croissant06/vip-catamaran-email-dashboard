@@ -12,30 +12,51 @@
             <div><span class="font-medium text-gray-800">From:</span> {{ email.sender_name }} &lt;{{ email.sender_email }}&gt;</div>
             <div><span class="font-medium text-gray-800">Received:</span> {{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</div>
             <div><span class="font-medium text-gray-800">Detected language:</span> {{ email.detected_language }}</div>
+            <div><span class="font-medium text-gray-800">Template language:</span> {{ email.template_language or "N/A" }}</div>
             <div><span class="font-medium text-gray-800">Booking number:</span> {{ email.booking_number or "N/A" }}</div>
             <div><span class="font-medium text-gray-800">GYG ref:</span> {{ email.gyg_ref or "N/A" }}</div>
             <div><span class="font-medium text-gray-800">Customer phone:</span> {{ email.customer_phone or "N/A" }}</div>
             <div><span class="font-medium text-gray-800">Cruise date:</span> {{ email.cruise_date.isoformat() if email.cruise_date else "N/A" }}</div>
+            <div><span class="font-medium text-gray-800">Cruise time:</span> {{ email.cruise_time.strftime("%H:%M") if email.cruise_time else "N/A" }}</div>
             <div><span class="font-medium text-gray-800">Booking type:</span> {{ email.booking_type or "N/A" }}</div>
-            {% if email.warning_note %}<div class="rounded-md bg-amber-50 px-3 py-2 text-amber-700">{{ email.warning_note }}</div>{% endif %}
+            <div><span class="font-medium text-gray-800">Pickup time:</span> {{ email.pickup_time_text or "N/A" }}</div>
+            {% if email.warning_note %}<div class="rounded-md bg-amber-50 px-3 py-2 text-amber-700 whitespace-pre-wrap">{{ email.warning_note }}</div>{% endif %}
         </div>
         <div class="mt-6 rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700 whitespace-pre-wrap">{{ email.full_body }}</div>
         {% if current_user.role.value == "admin" %}
         <details class="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
-            <summary class="cursor-pointer font-medium text-slate-900">Debug Info</summary>
-            <div class="mt-3 space-y-2">
+            <summary class="cursor-pointer font-medium text-slate-900">Parser Debug</summary>
+            <div class="mt-3 grid gap-2 md:grid-cols-2">
+                <div><span class="font-medium">Raw customer name:</span> {{ email.raw_customer_name_extraction or "N/A" }}</div>
                 <div><span class="font-medium">Raw hotel extraction:</span> {{ email.raw_hotel_extraction or "N/A" }}</div>
                 <div><span class="font-medium">Extraction source:</span> {{ email.extraction_source or "N/A" }}</div>
+                <div><span class="font-medium">Detected hotel:</span> {{ email.detected_hotel.name if email.detected_hotel else "N/A" }}</div>
+                <div><span class="font-medium">Assigned stop:</span> {{ email.assigned_bus_stop.name if email.assigned_bus_stop else "N/A" }}</div>
+                <div><span class="font-medium">Assigned city:</span> {{ email.assigned_bus_stop.city.name if email.assigned_bus_stop and email.assigned_bus_stop.city else "N/A" }}</div>
+                <div><span class="font-medium">Adults:</span> {{ email.num_adults if email.num_adults is not none else "N/A" }}</div>
+                <div><span class="font-medium">Children:</span> {{ email.num_children if email.num_children is not none else "N/A" }}</div>
+                <div><span class="font-medium">Total price:</span> {{ email.total_price or "N/A" }}</div>
+                <div><span class="font-medium">Status:</span> {{ email.status.value }}</div>
             </div>
         </details>
         {% endif %}
     </div>
     <div class="space-y-6">
         <div class="rounded-xl bg-white p-6 shadow">
+            {% if email.status.value == "flagged" and email.warning_note %}
+            <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 whitespace-pre-wrap">
+                {{ email.warning_note }}
+            </div>
+            {% endif %}
+            {% if email.booking_type == "UNKNOWN" %}
+            <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                Booking type could not be determined - please assign manually before sending reply.
+            </div>
+            {% endif %}
             <form method="post" action="/inbox/{{ email.id }}/reassign" class="space-y-4">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Detected hotel</label>
-                    <select name="detected_hotel_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select name="detected_hotel_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         {% for hotel in hotels %}
                         <option value="{{ hotel.id }}" {% if email.detected_hotel and hotel.id == email.detected_hotel.id %}selected{% endif %}>{{ hotel.name }}</option>
                         {% endfor %}
@@ -43,7 +64,7 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Assigned bus stop</label>
-                    <select name="assigned_bus_stop_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select name="assigned_bus_stop_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         {% for stop in stops %}
                         <option value="{{ stop.id }}" {% if email.assigned_bus_stop and stop.id == email.assigned_bus_stop.id %}selected{% endif %}>{{ stop.name }}</option>
                         {% endfor %}
@@ -51,11 +72,89 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Draft reply</label>
-                    <textarea name="draft_reply" rows="12" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ email.draft_reply }}</textarea>
+                    <textarea name="draft_reply" rows="12" class="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 {% if '[PICKUP TIME NOT FOUND]' in (email.draft_reply or '') %}border-red-300 bg-red-50 text-red-700{% else %}border-gray-300{% endif %}">{{ email.draft_reply }}</textarea>
                 </div>
                 <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Reassign</button>
             </form>
         </div>
+        {% if current_user.role.value == "admin" %}
+        <div class="rounded-xl bg-white p-6 shadow">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold">Parser Override</h2>
+                <p class="mt-1 text-sm text-gray-500">Adjust parsed booking fields, force a booking type, and optionally regenerate the reply draft.</p>
+            </div>
+            <form method="post" action="/admin/emails/{{ email.id }}/parser" class="space-y-4">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Booking type</label>
+                        <select name="booking_type" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            {% for booking_type in ["", "MORNING", "AFTERNOON", "SUNSET", "ANASTASIA", "OBZOR", "POMORIE"] %}
+                            <option value="{{ booking_type }}" {% if email.booking_type == booking_type %}selected{% endif %}>{{ booking_type or "Unspecified" }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Reply language</label>
+                        <select name="detected_language" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            {% for language in ["en", "es", "fr", "de", "it", "el"] %}
+                            <option value="{{ language }}" {% if email.detected_language == language %}selected{% endif %}>{{ language }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Cruise date</label>
+                        <input type="date" name="cruise_date" value="{{ email.cruise_date.isoformat() if email.cruise_date else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Cruise time</label>
+                        <input type="time" name="cruise_time" value="{{ email.cruise_time.strftime('%H:%M') if email.cruise_time else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Adults</label>
+                        <input type="number" min="0" name="num_adults" value="{{ email.num_adults if email.num_adults is not none else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Children</label>
+                        <input type="number" min="0" name="num_children" value="{{ email.num_children if email.num_children is not none else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Customer phone</label>
+                        <input name="customer_phone" value="{{ email.customer_phone }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Booking number</label>
+                        <input name="booking_number" value="{{ email.booking_number }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">GYG ref</label>
+                        <input name="gyg_ref" value="{{ email.gyg_ref }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Total price</label>
+                        <input name="total_price" value="{{ email.total_price }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Raw hotel extraction</label>
+                        <input name="raw_hotel_extraction" value="{{ email.raw_hotel_extraction }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Extraction source</label>
+                        <input name="extraction_source" value="{{ email.extraction_source }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Warning note</label>
+                        <textarea name="warning_note" rows="4" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ email.warning_note }}</textarea>
+                    </div>
+                </div>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input type="hidden" name="regenerate_draft" value="false">
+                    <input type="checkbox" name="regenerate_draft" value="true" checked class="h-4 w-4 rounded border-gray-300 text-indigo-600">
+                    Regenerate draft after saving parser changes
+                </label>
+                <button type="submit" class="rounded-md bg-slate-700 px-4 py-2 text-white transition duration-150 hover:bg-slate-800">Save Parser Overrides</button>
+            </form>
+        </div>
+        {% endif %}
         <div class="flex flex-wrap gap-3">
             <form method="post" action="/inbox/{{ email.id }}/send">
                 <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Send Reply</button>
