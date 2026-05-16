@@ -331,6 +331,21 @@ def _detect_cancellation(subject: str, text_body: str, html_body: str) -> bool:
     return _normalize_token(status_value) == "canceled"
 
 
+def _detect_viator(sender: str, text_body: str, html_body: str) -> bool:
+    sender_lower = (sender or "").lower()
+    if "viator.com" in sender_lower:
+        return True
+
+    html_text = BeautifulSoup(html_body, "html.parser").get_text("\n", strip=True) if html_body else ""
+    combined = f"{text_body}\n{html_text}".lower()
+    if "viator inc all rights reserved" in combined:
+        return True
+
+    label_map = _build_label_map(html_body, text_body)
+    booking_reference_pattern = re.compile(r"\bbooking reference br[- ]?\d", re.IGNORECASE)
+    return any(booking_reference_pattern.search(key) for key in label_map.keys())
+
+
 def _fallback_name_from_email(customer_email: str) -> str:
     local_part = (customer_email or "").split("@", 1)[0]
     if local_part.lower().startswith("customer-"):
@@ -713,6 +728,36 @@ def classify_email(
     fallback_sender: str = "",
     fallback_name: str = "",
 ) -> ClassificationResult:
+    if _detect_viator(fallback_sender, body, html_body):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=True,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="viator_detected",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Viator booking - manual processing required",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
     if _detect_cancellation(subject, body, html_body):
         language = detect_language(body or subject)
         return ClassificationResult(
