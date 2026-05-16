@@ -16,7 +16,7 @@ import imaplib
 from cruise_email_dashboard.database.db import SessionLocal, init_db
 from cruise_email_dashboard.database.models import EmailLog, EmailStatus
 from cruise_email_dashboard.services.classifier import classify_email
-from cruise_email_dashboard.services.email_poller import _decode_header, _extract_bodies, apply_classification_to_email, process_message
+from cruise_email_dashboard.services.email_poller import _decode_header, _extract_bodies, apply_classification_to_email, parse_received_at_header, process_message
 from cruise_email_dashboard.settings import settings
 
 EMAIL_TIMEOUT_SECONDS = 15
@@ -54,7 +54,7 @@ def reprocess_existing_rows() -> dict[str, int]:
                 fallback_sender=email.sender_email or "",
                 fallback_name=email.sender_name or "",
             )
-            _, new_status = apply_classification_to_email(db, email, classified, improvement_only=True)
+            _, new_status = apply_classification_to_email(db, email, classified, improvement_only=False)
             if old_status != new_status:
                 improved += 1
             if new_status == EmailStatus.flagged:
@@ -93,18 +93,22 @@ def import_single_email(email_id: bytes) -> tuple[str, str | None]:
         message = message_from_bytes(raw_email)
         message_id_header = message.get("Message-ID")
         text_body, html_body = _extract_bodies(message)
+        received_at = parse_received_at_header(message.get("Date"))
 
         with SessionLocal() as db:
             if message_id_header and db.query(EmailLog).filter(EmailLog.message_id == message_id_header).first():
                 return "skipped", message_id_header
-            process_message(
+            email_log = process_message(
                 db=db,
                 message_id=message_id_header,
                 sender=_decode_header(message.get("From")),
                 subject=_decode_header(message.get("Subject")),
                 text_body=text_body,
                 html_body=html_body,
+                received_at=received_at,
             )
+            if email_log is None:
+                return "skipped", message_id_header
             db.commit()
         return "imported", message_id_header
     finally:

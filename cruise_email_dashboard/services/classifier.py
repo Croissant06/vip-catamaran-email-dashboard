@@ -322,6 +322,9 @@ def _parse_num_children(value: str) -> int | None:
 
 
 def _detect_cancellation(subject: str, text_body: str, html_body: str) -> bool:
+    subject_lower = (subject or "").lower()
+    if "has been canceled" in subject_lower:
+        return True
     html_text = BeautifulSoup(html_body, "html.parser").get_text("\n", strip=True) if html_body else ""
     combined = f"{subject}\n{text_body}\n{html_text}".lower()
     if "has canceled a booking" in combined:
@@ -329,6 +332,19 @@ def _detect_cancellation(subject: str, text_body: str, html_body: str) -> bool:
     label_map = _build_label_map(html_body, text_body)
     status_value = _lookup_value(label_map, "status")
     return _normalize_token(status_value) == "canceled"
+
+
+def _detect_booking_change(subject: str) -> bool:
+    return "booking detail change" in (subject or "").lower()
+
+
+def _detect_non_booking_notification(subject: str) -> bool:
+    subject_lower = (subject or "").lower()
+    return (
+        "new review" in subject_lower
+        or "special offer" in subject_lower
+        or "get ahead" in subject_lower
+    )
 
 
 def _detect_viator(sender: str, text_body: str, html_body: str) -> bool:
@@ -344,6 +360,11 @@ def _detect_viator(sender: str, text_body: str, html_body: str) -> bool:
     label_map = _build_label_map(html_body, text_body)
     booking_reference_pattern = re.compile(r"\bbooking reference br[- ]?\d", re.IGNORECASE)
     return any(booking_reference_pattern.search(key) for key in label_map.keys())
+
+
+def _detect_tripadvisor(sender: str, body: str) -> bool:
+    sender_lower = (sender or "").lower()
+    return "tripadvisor.com" in sender_lower or "expmessaging" in sender_lower
 
 
 def _fallback_name_from_email(customer_email: str) -> str:
@@ -728,6 +749,96 @@ def classify_email(
     fallback_sender: str = "",
     fallback_name: str = "",
 ) -> ClassificationResult:
+    if _detect_booking_change(subject):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=True,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="booking_change_detected",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Booking modification notification — please check if pickup details have changed and update manually",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
+    if _detect_non_booking_notification(subject):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=False,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="non_booking_notification",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Non-booking notification — no action required",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
+    if _detect_tripadvisor(fallback_sender, body):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=True,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="tripadvisor_detected",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="TripAdvisor booking — manual processing required",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
     if _detect_viator(fallback_sender, body, html_body):
         language = detect_language(body or subject)
         return ClassificationResult(

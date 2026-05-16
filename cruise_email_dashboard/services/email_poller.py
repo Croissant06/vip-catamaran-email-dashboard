@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from email import message_from_bytes
 from email.header import decode_header, make_header
 from email.message import Message
-from email.utils import parseaddr
+from email.utils import parseaddr, parsedate_to_datetime
 import imaplib
 import logging
 import socket
@@ -24,6 +24,17 @@ from cruise_email_dashboard.settings import settings
 
 logger = logging.getLogger(__name__)
 _poll_lock = asyncio.Lock()
+
+
+def _sender_domain(sender_value: str) -> str:
+    _, sender_email = parseaddr(sender_value or "")
+    if "@" not in sender_email:
+        return ""
+    return sender_email.rsplit("@", 1)[1].strip().lower()
+
+
+def _should_skip_sender(sender_value: str) -> bool:
+    return _sender_domain(sender_value) == "vipcatamaran.com"
 
 
 def _choose_status(old_status: EmailStatus, new_status: EmailStatus, improvement_only: bool) -> EmailStatus:
@@ -51,6 +62,18 @@ def _decode_payload(part: Message) -> str:
     payload = part.get_payload(decode=True) or b""
     charset = part.get_content_charset() or "utf-8"
     return payload.decode(charset, errors="ignore")
+
+
+def parse_received_at_header(date_header: str | None) -> datetime:
+    if not date_header:
+        return datetime.now(UTC).replace(tzinfo=None)
+    try:
+        parsed = parsedate_to_datetime(date_header)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC).replace(tzinfo=None)
+    except Exception:
+        return datetime.now(UTC).replace(tzinfo=None)
 
 
 def _extract_bodies(message: Message) -> tuple[str, str]:
@@ -227,7 +250,11 @@ def process_message(
     subject: str,
     text_body: str,
     html_body: str = "",
-) -> EmailLog:
+    received_at: datetime | None = None,
+) -> EmailLog | None:
+    if _should_skip_sender(sender):
+        return None
+
     sender_name, sender_email = parseaddr(sender)
     plain_text_body = text_body or (BeautifulSoup(html_body, "html.parser").get_text("\n", strip=True) if html_body else "")
     classification = classify_email(
@@ -241,7 +268,7 @@ def process_message(
     )
     email_log = EmailLog(
         message_id=message_id,
-        received_at=datetime.now(UTC).replace(tzinfo=None),
+        received_at=received_at or datetime.now(UTC).replace(tzinfo=None),
         sender_email=classification.customer_email or sender_email or sender,
         sender_name=classification.customer_name or sender_name or "Guest",
         subject=subject,
@@ -296,14 +323,19 @@ def poll_inbox_once(db: Session) -> int:
                 continue
 
             text_body, html_body = _extract_bodies(message)
-            process_message(
+            received_at = parse_received_at_header(message.get("Date"))
+            email_log = process_message(
                 db=db,
                 message_id=message_id_header,
                 sender=_decode_header(message.get("From")),
                 subject=_decode_header(message.get("Subject")),
                 text_body=text_body,
                 html_body=html_body,
+                received_at=received_at,
             )
+            if email_log is None:
+                mailbox.store(email_id, "+FLAGS", "\\Seen")
+                continue
             mailbox.store(email_id, "+FLAGS", "\\Seen")
             new_count += 1
 

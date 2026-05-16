@@ -190,7 +190,7 @@ def admin_reprocess_all(db: Session = Depends(get_db), user: User = Depends(get_
             fallback_sender=email.sender_email or "",
             fallback_name=email.sender_name or "",
         )
-        _, new_status = apply_classification_to_email(db, email, classified, improvement_only=True)
+        _, new_status = apply_classification_to_email(db, email, classified, improvement_only=False)
         if old_status != new_status:
             improved += 1
         if new_status == EmailStatus.flagged:
