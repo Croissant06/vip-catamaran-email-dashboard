@@ -20,7 +20,11 @@
             <div><span class="font-medium text-gray-800">Cruise time:</span> {{ email.cruise_time.strftime("%H:%M") if email.cruise_time else "N/A" }}</div>
             <div><span class="font-medium text-gray-800">Booking type:</span> {{ email.booking_type or "N/A" }}</div>
             <div><span class="font-medium text-gray-800">Pickup time:</span> {{ email.pickup_time_text or "N/A" }}</div>
-            {% if email.warning_note %}<div class="rounded-md bg-amber-50 px-3 py-2 text-amber-700 whitespace-pre-wrap">{{ email.warning_note }}</div>{% endif %}
+            {% if email.status.value == "cancelled" %}
+            <div class="rounded-md bg-slate-100 px-3 py-2 text-slate-700 whitespace-pre-wrap">This is a cancellation notification. No reply is required.</div>
+            {% elif email.warning_note %}
+            <div class="rounded-md bg-amber-50 px-3 py-2 text-amber-700 whitespace-pre-wrap">{{ email.warning_note }}</div>
+            {% endif %}
         </div>
         <div class="mt-6 rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700 whitespace-pre-wrap">{{ email.full_body }}</div>
         {% if current_user.role.value == "admin" %}
@@ -43,6 +47,11 @@
     </div>
     <div class="space-y-6">
         <div class="rounded-xl bg-white p-6 shadow">
+            {% if email.status.value == "cancelled" %}
+            <div class="mb-4 rounded-md border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                This is a cancellation notification. No reply is required.
+            </div>
+            {% endif %}
             {% if email.status.value == "flagged" and email.warning_note %}
             <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 whitespace-pre-wrap">
                 {{ email.warning_note }}
@@ -74,7 +83,9 @@
                     <label class="mb-1 block text-sm font-medium text-gray-700">Draft reply</label>
                     <textarea name="draft_reply" rows="12" class="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 {% if '[PICKUP TIME NOT FOUND]' in (email.draft_reply or '') %}border-red-300 bg-red-50 text-red-700{% else %}border-gray-300{% endif %}">{{ email.draft_reply }}</textarea>
                 </div>
+                {% if email.status.value != "cancelled" %}
                 <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Reassign</button>
+                {% endif %}
             </form>
         </div>
         {% if current_user.role.value == "admin" %}
@@ -155,6 +166,7 @@
             </form>
         </div>
         {% endif %}
+        {% if email.status.value != "cancelled" %}
         <div class="flex flex-wrap gap-3">
             <form method="post" action="/inbox/{{ email.id }}/send">
                 <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Send Reply</button>
@@ -163,6 +175,7 @@
                 <button type="submit" class="rounded-md bg-red-500 px-4 py-2 text-white transition duration-150 hover:bg-red-600">Flag as Manual</button>
             </form>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

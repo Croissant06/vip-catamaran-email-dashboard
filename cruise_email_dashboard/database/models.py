@@ -14,6 +14,7 @@ class EmailStatus(str, Enum):
     sent = "sent"
     flagged = "flagged"
     manual = "manual"
+    cancelled = "cancelled"
     send_failed = "send_failed"
 
 
@@ -99,6 +100,7 @@ class EmailLog(Base):
     subject: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     body_snippet: Mapped[str] = mapped_column(Text, default="", nullable=False)
     full_body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    html_body: Mapped[str | None] = mapped_column(Text, nullable=True)
     detected_language: Mapped[str] = mapped_column(String(16), default="en", nullable=False)
     template_language: Mapped[str] = mapped_column(String(16), default="en", nullable=False)
     detected_hotel_id: Mapped[int | None] = mapped_column(ForeignKey("hotels.id"), nullable=True)
@@ -112,6 +114,7 @@ class EmailLog(Base):
     booking_number: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     gyg_ref: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     total_price: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    detected_city: Mapped[str] = mapped_column(String(128), default="", nullable=False)
     raw_customer_name_extraction: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     raw_hotel_extraction: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     extraction_source: Mapped[str] = mapped_column(String(64), default="", nullable=False)

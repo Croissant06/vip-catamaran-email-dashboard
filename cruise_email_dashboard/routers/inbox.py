@@ -76,6 +76,8 @@ def email_detail(request: Request, email_id: int, db: Session = Depends(get_db),
 @router.post("/{email_id}/send")
 def send_email_reply(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
+    if email.status == EmailStatus.cancelled:
+        return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
     try:
         send_reply(email)
         email.status = EmailStatus.sent
@@ -92,6 +94,8 @@ def send_email_reply(email_id: int, db: Session = Depends(get_db), user: User = 
 @router.post("/{email_id}/manual")
 def flag_manual(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
+    if email.status == EmailStatus.cancelled:
+        return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
     email.status = EmailStatus.manual
     email.is_new = False
     db.commit()
@@ -108,6 +112,8 @@ def reassign_email(
     user: User = Depends(get_current_user),
 ):
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
+    if email.status == EmailStatus.cancelled:
+        return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
     email.detected_hotel = db.query(Hotel).filter(Hotel.id == detected_hotel_id).first()
     email.assigned_bus_stop = db.query(BusStop).filter(BusStop.id == assigned_bus_stop_id).first()
     schedule_resolution = resolve_pickup_schedule(db, email.assigned_bus_stop, email.booking_type, email.cruise_date)

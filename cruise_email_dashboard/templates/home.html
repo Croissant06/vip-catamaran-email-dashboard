@@ -2,10 +2,11 @@
 {% block header_title %}Home{% endblock %}
 {% block header_subtitle %}Analytics overview and recent activity{% endblock %}
 {% block content %}
-<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
     <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Emails received today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ total_today }}</div></div>
     <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Emails sent today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ sent_today }}</div></div>
     <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Flagged emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ flagged }}</div></div>
+    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Cancelled emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ cancelled }}</div></div>
     <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Average response time</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ avg_response }}</div></div>
 </div>
 <div class="mt-6 grid gap-6 xl:grid-cols-3">
@@ -56,7 +57,8 @@ new Chart(document.getElementById("emailsChart"), {
         datasets: [
             { label: "Sent", data: {{ sent_series | tojson }}, backgroundColor: "#22c55e" },
             { label: "Flagged", data: {{ flagged_series | tojson }}, backgroundColor: "#ef4444" },
-            { label: "Manual", data: {{ manual_series | tojson }}, backgroundColor: "#6b7280" }
+            { label: "Manual", data: {{ manual_series | tojson }}, backgroundColor: "#6b7280" },
+            { label: "Cancelled", data: {{ cancelled_series | tojson }}, backgroundColor: "#94a3b8" }
         ]
     },
     options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }

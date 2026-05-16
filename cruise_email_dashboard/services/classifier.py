@@ -12,7 +12,7 @@ from langdetect import LangDetectException, detect
 from rapidfuzz import fuzz
 from sqlalchemy.orm import Session
 
-from cruise_email_dashboard.database.models import City, Hotel
+from cruise_email_dashboard.database.models import BusStop, City, EmailStatus, Hotel
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +141,7 @@ class BookingParseResult:
 class ClassificationResult:
     language: str
     matched_hotel: Hotel | None
+    matched_bus_stop: BusStop | None
     score: float
     is_bus_request: bool
     is_booking_email: bool
@@ -158,8 +159,11 @@ class ClassificationResult:
     raw_hotel_extraction: str
     extraction_source: str
     city: City | None
+    detected_city_name: str
     gyg_ref: str
     warning_note: str
+    resolved_status: EmailStatus
+    selected_stop_time_text: str = ""
 
 
 def detect_language(text: str) -> str:
@@ -249,6 +253,14 @@ def _lookup_value(label_map: dict[str, str], *labels: str) -> str:
     return ""
 
 
+def _lookup_prefix_value(label_map: dict[str, str], prefix: str) -> str:
+    normalized_prefix = _normalize_token(prefix)
+    for key, value in label_map.items():
+        if key.startswith(normalized_prefix) and value:
+            return value
+    return ""
+
+
 def _looks_like_customer_name(value: str) -> bool:
     candidate = _normalize_spaces(str(value or "").strip(" '\""))
     if not candidate or "@" in candidate or ":" in candidate:
@@ -308,6 +320,16 @@ def _parse_num_children(value: str) -> int | None:
     return None
 
 
+def _detect_cancellation(subject: str, text_body: str, html_body: str) -> bool:
+    html_text = BeautifulSoup(html_body, "html.parser").get_text("\n", strip=True) if html_body else ""
+    combined = f"{subject}\n{text_body}\n{html_text}".lower()
+    if "has canceled a booking" in combined:
+        return True
+    label_map = _build_label_map(html_body, text_body)
+    status_value = _lookup_value(label_map, "status")
+    return _normalize_token(status_value) == "canceled"
+
+
 def _fallback_name_from_email(customer_email: str) -> str:
     local_part = (customer_email or "").split("@", 1)[0]
     if local_part.lower().startswith("customer-"):
@@ -349,6 +371,18 @@ def _extract_customer_name(html_body: str, label_map: dict[str, str], fallback_n
                 if _looks_like_customer_name(candidate):
                     raw_name = candidate
                     break
+
+    if not _looks_like_customer_name(raw_name):
+        full_text = max(label_map.keys(), key=len, default="")
+        match = re.search(
+            r"\bcustomer\s+([a-z]+(?:\s+[a-z]+)*)\s+email\b",
+            full_text,
+            re.IGNORECASE,
+        )
+        if match:
+            candidate = match.group(1).strip().title()
+            if _looks_like_customer_name(candidate):
+                raw_name = candidate
 
     if not _looks_like_customer_name(raw_name):
         raw_name = _lookup_value(label_map, "customer name", "customer", "name") or fallback_name
@@ -413,6 +447,41 @@ def _extract_notes_hotel(notes_block: str) -> str:
     return ""
 
 
+def _extract_time_from_stop_field(bus_stop_field: str) -> str:
+    match = re.search(r"\b(\d{1,2})[\s:.](\d{2})\b", bus_stop_field or "")
+    if not match:
+        return ""
+    return f"{int(match.group(1)):02d}:{match.group(2)}"
+
+
+def _extract_notes_block_from_html(html_body: str) -> str:
+    if not html_body:
+        return ""
+    soup = BeautifulSoup(html_body, "html.parser")
+    for tag in soup.find_all(["h2", "h3", "h4", "strong", "b", "td", "th"]):
+        tag_text = tag.get_text(" ", strip=True)
+        if re.match(r"^\s*notes\s*$", tag_text, re.IGNORECASE):
+            notes_parts: list[str] = []
+            parent = tag.parent
+            if parent:
+                for sibling in parent.next_siblings:
+                    text = sibling.get_text(" ", strip=True) if hasattr(sibling, "get_text") else str(sibling).strip()
+                    if text:
+                        notes_parts.append(text)
+                if notes_parts:
+                    return "\n".join(notes_parts)
+
+    flattened = soup.get_text("\n", strip=True)
+    match = re.search(
+        r"(by\s+GetYourGuide[^\n]*\n.*?)(?=\n\s*(?:Price|Payments|View booking))",
+        flattened,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if match:
+        return match.group(1).strip()
+    return ""
+
+
 def detect_city_name(*values: str) -> str:
     haystack = _normalize_token(" ".join(value for value in values if value))
     for hint, matched_city in CITY_HINTS.items():
@@ -426,6 +495,39 @@ def detect_city_from_text(db: Session, *values: str) -> City | None:
     if not city_name:
         return None
     return db.query(City).filter(City.name == city_name).first()
+
+
+def extract_bus_stop(db: Session, bus_stop_field: str, threshold: int, city: City | None = None) -> tuple[BusStop | None, float, str]:
+    candidate_text = _normalize_spaces(bus_stop_field or "")
+    if not candidate_text or _is_invalid_hotel_field(candidate_text):
+        return None, 0.0, ""
+
+    selected_time = _extract_time_from_stop_field(candidate_text)
+    normalized_candidate = re.sub(r"\b\d{1,2}[\s:.]\d{2}\b", " ", candidate_text)
+    normalized_candidate = re.sub(r"\s+", " ", normalized_candidate).strip().lower()
+    query = db.query(BusStop)
+    if city:
+        query = query.filter(BusStop.city_id == city.id)
+
+    best_stop: BusStop | None = None
+    best_score = 0.0
+    for stop in query.all():
+        stop_name = stop.name.lower()
+        address = (stop.address or "").lower()
+        description = (stop.description or "").lower()
+        score = max(
+            fuzz.partial_ratio(stop_name, normalized_candidate),
+            fuzz.token_set_ratio(stop_name, normalized_candidate),
+            fuzz.partial_ratio(address, normalized_candidate) if address else 0,
+            fuzz.partial_ratio(description, normalized_candidate) if description else 0,
+        )
+        if score > best_score:
+            best_stop = stop
+            best_score = score
+
+    if best_score >= threshold:
+        return best_stop, best_score, selected_time
+    return None, best_score, selected_time
 
 
 def _resolve_template_language(preferred_language: str) -> tuple[str, str]:
@@ -492,9 +594,13 @@ def parse_booking_email(subject: str, text_body: str, html_body: str, fallback_s
 
     label_map = _build_label_map(html_body, text_body)
     combined_text = _normalize_spaces(BeautifulSoup(html_body, "html.parser").get_text("\n", strip=True) if html_body else text_body)
-    notes_block = _lookup_value(label_map, "notes")
+    notes_block = _extract_notes_block_from_html(html_body) or _lookup_value(label_map, "notes") or _lookup_prefix_value(label_map, "notes")
     hotel_name_field = _lookup_value(label_map, "name of your hotel or complex", "hotel or complex", "hotel name")
-    bus_stop_field = _lookup_value(label_map, "choose the pickup point", "pickup point", "pickup location")
+    bus_stop_field = (
+        _lookup_value(label_map, "choose the pickup point", "pickup point", "pickup location")
+        or _lookup_prefix_value(label_map, "choose the pickup point")
+        or _lookup_prefix_value(label_map, "pickup point")
+    )
     preferred_language = _lookup_value(label_map, "preferred language", "language")
     customer_email = _lookup_value(label_map, "email") or _extract_reply_email(combined_text, fallback_sender)
     customer_name, raw_customer_name_extraction = _extract_customer_name(html_body, label_map, fallback_name, customer_email)
@@ -506,6 +612,8 @@ def parse_booking_email(subject: str, text_body: str, html_body: str, fallback_s
     cruise_time = _parse_time(_lookup_value(label_map, "time", "start time"))
     num_adults = _parse_num_adults(_lookup_value(label_map, "participants", "participants details", "adults"))
     num_children = _parse_num_children(_lookup_value(label_map, "participants", "participants details", "children"))
+    if num_adults is not None and num_children is None:
+        num_children = 0
     template_language, language_warning = _resolve_template_language(preferred_language)
     gyg_match = re.search(r"\bGYG[A-Z0-9]+\b", f"{notes_block}\n{text_body}", flags=re.IGNORECASE)
 
@@ -604,6 +712,36 @@ def classify_email(
     fallback_sender: str = "",
     fallback_name: str = "",
 ) -> ClassificationResult:
+    if _detect_cancellation(subject, body, html_body):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=True,
+            is_booking_email=True,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="cancellation",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Cancellation notification - no reply needed",
+            resolved_status=EmailStatus.cancelled,
+            selected_stop_time_text="",
+        )
+
     booking_email = is_booking_email(subject, body)
     booking = parse_booking_email(subject, body, html_body, fallback_sender, fallback_name) if booking_email else BookingParseResult()
 
@@ -623,34 +761,55 @@ def classify_email(
 
     language = booking.template_language if booking_email else detect_language(body or subject)
     bus_request = is_bus_stop_email(subject, body)
-    hotel, score = extract_hotel(
+    matched_stop, stop_score, selected_stop_time_text = extract_bus_stop(
         db,
-        body=body,
+        bus_stop_field=booking.bus_stop_field,
         threshold=threshold,
         city=city,
-        raw_hotel_name=booking.raw_hotel_extraction,
-    ) if bus_request else (None, 0.0)
+    ) if bus_request else (None, 0.0, "")
+    if bus_request and not matched_stop:
+        hotel, score = extract_hotel(
+            db,
+            body=body,
+            threshold=threshold,
+            city=city,
+            raw_hotel_name=booking.raw_hotel_extraction,
+        )
+    else:
+        hotel, score = None, 0.0
 
     warning_parts = [booking.warning_note] if booking.warning_note else []
+    extraction_source = booking.extraction_source
+    if matched_stop:
+        hotel = None
+        score = max(score, stop_score)
+        extraction_source = "customer_selected_stop"
     special_flag = COMMERCIAL_VENUE_FLAGS.get(_normalize_token(booking.raw_hotel_extraction))
     if special_flag:
+        matched_stop = None
         hotel = None
         score = 0.0
         warning_parts.append(special_flag)
-    if booking_email and not booking.raw_hotel_extraction:
-        warning_parts.append("No hotel found in booking")
+    if booking_email and not booking.raw_hotel_extraction and not matched_stop:
+        warning_parts.append("No hotel provided by customer - manual assignment required")
     if booking_email and not booking.booking_type:
         booking.booking_type = "UNKNOWN"
         warning_parts.append("Could not determine booking type from subject or excursion field")
     if booking_email and not city:
         warning_parts.append("City could not be determined")
     warning_note = "\n".join(part for part in warning_parts if part).strip()
+    resolved_status = EmailStatus.pending
+    if not bus_request:
+        resolved_status = EmailStatus.flagged
+    elif not matched_stop and not hotel:
+        resolved_status = EmailStatus.flagged
     if warning_note:
         logger.warning("[PARSER] %s", warning_note.replace("\n", " | "))
 
     return ClassificationResult(
         language=language,
         matched_hotel=hotel,
+        matched_bus_stop=matched_stop,
         score=score,
         is_bus_request=bus_request,
         is_booking_email=booking_email,
@@ -666,8 +825,11 @@ def classify_email(
         customer_phone=booking.customer_phone,
         raw_customer_name_extraction=booking.raw_customer_name_extraction,
         raw_hotel_extraction=booking.raw_hotel_extraction,
-        extraction_source=booking.extraction_source,
+        extraction_source=extraction_source,
         city=city,
+        detected_city_name=city.name if city else booking.city_name,
         gyg_ref=booking.gyg_ref,
         warning_note=warning_note,
+        resolved_status=resolved_status,
+        selected_stop_time_text=selected_stop_time_text,
     )

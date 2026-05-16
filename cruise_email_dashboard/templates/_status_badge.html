@@ -3,6 +3,7 @@
     "sent": "bg-green-100 text-green-700 rounded-full px-2 py-0.5 text-xs",
     "flagged": "bg-red-100 text-red-700 rounded-full px-2 py-0.5 text-xs",
     "manual": "bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs",
+    "cancelled": "bg-slate-200 text-slate-600 rounded-full px-2 py-0.5 text-xs",
     "send_failed": "bg-rose-100 text-rose-700 rounded-full px-2 py-0.5 text-xs"
 } %}
-<span class="{{ badge_classes[email.status.value] }}">{{ email.status.value }}</span>
+<span class="{{ badge_classes.get(email.status.value, 'bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs') }}">{{ email.status.value }}</span>

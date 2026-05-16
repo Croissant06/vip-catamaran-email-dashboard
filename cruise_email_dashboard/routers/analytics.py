@@ -26,6 +26,7 @@ def home(request: Request, db: Session = Depends(get_db), user: User = Depends(g
         or 0
     )
     flagged = db.query(func.count(EmailLog.id)).filter(EmailLog.status == EmailStatus.flagged).scalar() or 0
+    cancelled = db.query(func.count(EmailLog.id)).filter(EmailLog.status == EmailStatus.cancelled).scalar() or 0
     average_response_minutes = (
         db.query(func.avg((func.julianday(EmailLog.sent_at) - func.julianday(EmailLog.received_at)) * 24 * 60))
         .filter(EmailLog.sent_at.is_not(None))
@@ -36,6 +37,7 @@ def home(request: Request, db: Session = Depends(get_db), user: User = Depends(g
     sent_series: list[int] = []
     flagged_series: list[int] = []
     manual_series: list[int] = []
+    cancelled_series: list[int] = []
     for offset in range(6, -1, -1):
         day = (now - timedelta(days=offset)).date()
         next_day = day + timedelta(days=1)
@@ -58,6 +60,12 @@ def home(request: Request, db: Session = Depends(get_db), user: User = Depends(g
             .scalar()
             or 0
         )
+        cancelled_series.append(
+            db.query(func.count(EmailLog.id))
+            .filter(EmailLog.received_at >= day, EmailLog.received_at < next_day, EmailLog.status == EmailStatus.cancelled)
+            .scalar()
+            or 0
+        )
 
     language_rows = (
         db.query(EmailLog.detected_language, func.count(EmailLog.id))
@@ -75,11 +83,13 @@ def home(request: Request, db: Session = Depends(get_db), user: User = Depends(g
             total_today=total_today,
             sent_today=sent_today,
             flagged=flagged,
+            cancelled=cancelled,
             avg_response=f"{average_response_minutes:.1f} min" if average_response_minutes else "N/A",
             chart_days=chart_days,
             sent_series=sent_series,
             flagged_series=flagged_series,
             manual_series=manual_series,
+            cancelled_series=cancelled_series,
             language_labels=[row[0] for row in language_rows],
             language_values=[row[1] for row in language_rows],
             recent_activity=recent_activity,

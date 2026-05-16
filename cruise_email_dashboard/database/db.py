@@ -95,10 +95,12 @@ def _run_lightweight_migrations() -> None:
             "cruise_time": "TIME",
             "num_adults": "INTEGER",
             "num_children": "INTEGER",
+            "html_body": "TEXT",
             "customer_phone": "VARCHAR(64) NOT NULL DEFAULT ''",
             "booking_number": "VARCHAR(64) NOT NULL DEFAULT ''",
             "gyg_ref": "VARCHAR(64) NOT NULL DEFAULT ''",
             "total_price": "VARCHAR(64) NOT NULL DEFAULT ''",
+            "detected_city": "VARCHAR(128) NOT NULL DEFAULT ''",
             "raw_customer_name_extraction": "VARCHAR(255) NOT NULL DEFAULT ''",
             "raw_hotel_extraction": "VARCHAR(255) NOT NULL DEFAULT ''",
             "extraction_source": "VARCHAR(64) NOT NULL DEFAULT ''",
@@ -123,16 +125,31 @@ def _run_reference_data_fixes() -> None:
     parsing accuracy as new customer wording is discovered in live mailbox traffic.
     """
 
-    from cruise_email_dashboard.database.models import Hotel
+    from cruise_email_dashboard.database.models import BusStop, City, Hotel
 
     with session_scope() as db:
-        hotel = db.query(Hotel).filter(Hotel.name == "Best Western / Sveshest").first()
-        if not hotel:
+        sunny_beach = db.query(City).filter(City.name == "Sunny Beach").first()
+        if not sunny_beach:
             return
+        stop_by_name = {stop.name: stop for stop in db.query(BusStop).filter(BusStop.city_id == sunny_beach.id).all()}
+        hotel_by_name = {hotel.name: hotel for hotel in db.query(Hotel).filter(Hotel.city_id == sunny_beach.id).all()}
 
-        aliases = [part.strip() for part in hotel.aliases.split(",") if part.strip()]
-        normalized = {alias.lower() for alias in aliases}
-        for alias in ("AluaSoul Sunny Beach", "AluaSoul"):
-            if alias.lower() not in normalized:
-                aliases.append(alias)
-        hotel.aliases = ",".join(aliases)
+        def upsert_hotel(name: str, aliases: tuple[str, ...], stop_name: str) -> None:
+            stop = stop_by_name.get(stop_name)
+            if not stop:
+                return
+            hotel = hotel_by_name.get(name)
+            alias_values = [alias.strip() for alias in aliases if alias.strip()]
+            alias_csv = ",".join(alias_values)
+            if hotel:
+                hotel.aliases = alias_csv
+                hotel.bus_stop_id = stop.id
+                hotel.city_id = sunny_beach.id
+            else:
+                hotel = Hotel(name=name, aliases=alias_csv, bus_stop_id=stop.id, city_id=sunny_beach.id)
+                db.add(hotel)
+                hotel_by_name[name] = hotel
+
+        upsert_hotel("Favorit Aparthotel", ("Favorit", "Favorit Apart"), "Flower Street Main Bus Stop")
+        upsert_hotel("Premier Fort Beach", ("Premier Fort", "Fort Beach"), "Mercury Grand Market")
+        upsert_hotel("AluaSoul Sunny Beach", ("AluaSoul",), "Hotel Best Western / Sveshest")

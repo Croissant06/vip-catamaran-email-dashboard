@@ -68,6 +68,7 @@
                 <h2 class="text-lg font-semibold">Mailbox Status</h2>
                 <div class="flex gap-2">
                     <button type="button" id="refreshMailboxStatus" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Refresh</button>
+                    <button type="button" id="reprocessAllFlagged" class="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-slate-800">Reprocess All Flagged</button>
                     <button type="button" id="runPollNow" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Run Poll Now</button>
                     <button type="button" id="resetBackoff" class="rounded-md bg-red-500 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-red-600">Reset Backoff</button>
                 </div>
@@ -243,6 +244,15 @@
         </div>
     </div>
 </div>
+<div id="reprocessModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4">
+    <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Reprocess Summary</h2>
+            <button type="button" id="closeReprocessModal" class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition duration-150 hover:bg-gray-300">Close</button>
+        </div>
+        <pre id="reprocessSummary" class="rounded-lg bg-slate-50 p-4 text-sm text-slate-800 whitespace-pre-wrap"></pre>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}
 <script>
@@ -274,6 +284,26 @@ async function refreshMailboxStatus() {
 async function postMailboxAction(url) {
     await fetch(url, { method: "POST" });
     await refreshMailboxStatus();
+}
+
+function showReprocessModal(payload) {
+    const modal = document.getElementById("reprocessModal");
+    const summary = document.getElementById("reprocessSummary");
+    summary.textContent = JSON.stringify(payload, null, 2);
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function hideReprocessModal() {
+    const modal = document.getElementById("reprocessModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
+async function runReprocessAll() {
+    const response = await fetch("/admin/reprocess-all", { method: "POST" });
+    const data = await response.json();
+    showReprocessModal(data);
 }
 
 function filterHotelStops(form) {
@@ -320,8 +350,15 @@ for (const form of document.querySelectorAll("form")) {
 }
 
 document.getElementById("refreshMailboxStatus")?.addEventListener("click", refreshMailboxStatus);
+document.getElementById("reprocessAllFlagged")?.addEventListener("click", runReprocessAll);
 document.getElementById("runPollNow")?.addEventListener("click", () => postMailboxAction("/admin/mailbox-status/run-poll"));
 document.getElementById("resetBackoff")?.addEventListener("click", () => postMailboxAction("/admin/mailbox-status/reset-backoff"));
+document.getElementById("closeReprocessModal")?.addEventListener("click", hideReprocessModal);
+document.getElementById("reprocessModal")?.addEventListener("click", (event) => {
+    if (event.target.id === "reprocessModal") {
+        hideReprocessModal();
+    }
+});
 refreshMailboxStatus();
 </script>
 {% endblock %}

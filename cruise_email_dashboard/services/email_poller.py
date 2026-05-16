@@ -26,6 +26,18 @@ logger = logging.getLogger(__name__)
 _poll_lock = asyncio.Lock()
 
 
+def _choose_status(old_status: EmailStatus, new_status: EmailStatus, improvement_only: bool) -> EmailStatus:
+    if not improvement_only:
+        return new_status
+    if old_status == EmailStatus.sent:
+        return old_status
+    if new_status == EmailStatus.cancelled and old_status != EmailStatus.cancelled:
+        return EmailStatus.cancelled
+    if old_status == EmailStatus.flagged and new_status == EmailStatus.pending:
+        return EmailStatus.pending
+    return old_status
+
+
 def _decode_header(value: str | None) -> str:
     if not value:
         return ""
@@ -108,6 +120,106 @@ def _mark_failure(exc: Exception, auth_failure: bool) -> None:
         logger.error("[POLL] Poll cycle failed: %s", exc)
 
 
+def apply_classification_to_email(
+    db: Session,
+    email_log: EmailLog,
+    classification,
+    *,
+    improvement_only: bool = False,
+) -> tuple[EmailStatus, EmailStatus]:
+    old_status = email_log.status or EmailStatus.pending
+
+    email_log.sender_email = classification.customer_email or email_log.sender_email
+    email_log.sender_name = classification.customer_name or email_log.sender_name or "Guest"
+    email_log.detected_language = classification.language
+    email_log.template_language = classification.language
+    email_log.booking_type = classification.booking_type or ""
+    email_log.cruise_date = classification.cruise_date
+    email_log.cruise_time = classification.cruise_time
+    email_log.num_adults = classification.num_adults
+    email_log.num_children = classification.num_children
+    email_log.customer_phone = classification.customer_phone or ""
+    email_log.booking_number = classification.booking_number or ""
+    email_log.gyg_ref = classification.gyg_ref or ""
+    email_log.total_price = classification.total_price or ""
+    email_log.detected_city = classification.detected_city_name or ""
+    email_log.raw_customer_name_extraction = classification.raw_customer_name_extraction or ""
+    email_log.raw_hotel_extraction = classification.raw_hotel_extraction or ""
+    email_log.extraction_source = classification.extraction_source or ""
+    email_log.warning_note = classification.warning_note or ""
+
+    if classification.resolved_status == EmailStatus.cancelled:
+        email_log.detected_hotel = None
+        email_log.assigned_bus_stop = None
+        email_log.pickup_time_text = ""
+        email_log.draft_reply = ""
+        email_log.status = _choose_status(old_status, EmailStatus.cancelled, improvement_only)
+        return old_status, email_log.status
+
+    if not classification.is_bus_request:
+        email_log.detected_hotel = None
+        email_log.assigned_bus_stop = None
+        email_log.pickup_time_text = ""
+        email_log.draft_reply = ""
+        email_log.status = _choose_status(old_status, EmailStatus.flagged, improvement_only)
+        if not email_log.warning_note:
+            email_log.warning_note = "Email did not match bus stop request keywords."
+        return old_status, email_log.status
+
+    email_log.detected_hotel = classification.matched_hotel
+    email_log.assigned_bus_stop = classification.matched_bus_stop or (classification.matched_hotel.bus_stop if classification.matched_hotel else None)
+
+    if not classification.matched_hotel and not classification.matched_bus_stop:
+        email_log.pickup_time_text = ""
+        email_log.draft_reply = ""
+        email_log.status = _choose_status(old_status, EmailStatus.flagged, improvement_only)
+        if not email_log.warning_note:
+            email_log.warning_note = "No hotel match found above the configured fuzzy threshold."
+        return old_status, email_log.status
+
+    if not email_log.assigned_bus_stop:
+        email_log.pickup_time_text = ""
+        email_log.draft_reply = ""
+        email_log.status = _choose_status(old_status, EmailStatus.flagged, improvement_only)
+        email_log.warning_note = "\n".join(
+            part for part in [email_log.warning_note, "Matched hotel has no assigned bus stop."] if part
+        ).strip()
+        return old_status, email_log.status
+
+    schedule_resolution = resolve_pickup_schedule(
+        db,
+        email_log.assigned_bus_stop,
+        booking_type=email_log.booking_type,
+        cruise_date=email_log.cruise_date,
+    )
+    email_log.pickup_time_text = (
+        schedule_resolution.schedule.pickup_time.strftime("%H:%M")
+        if schedule_resolution.schedule
+        else MISSING_PICKUP_TIME_PLACEHOLDER
+    )
+    if schedule_resolution.warning_note:
+        email_log.warning_note = "\n".join(
+            part for part in [email_log.warning_note, schedule_resolution.warning_note] if part
+        ).strip()
+
+    if classification.selected_stop_time_text and schedule_resolution.schedule:
+        resolved_time = schedule_resolution.schedule.pickup_time.strftime("%H:%M")
+        if classification.selected_stop_time_text != resolved_time:
+            mismatch_note = (
+                f"Customer selected stop includes time {classification.selected_stop_time_text}, "
+                f"but schedule resolved to {resolved_time}."
+            )
+            email_log.warning_note = "\n".join(part for part in [email_log.warning_note, mismatch_note] if part).strip()
+
+    if schedule_resolution.warning_note and "Pomorie operates Tuesday and Friday only" in schedule_resolution.warning_note:
+        target_status = EmailStatus.flagged
+    else:
+        target_status = EmailStatus.pending
+    email_log.status = _choose_status(old_status, target_status, improvement_only)
+    regenerate_email_draft(email_log)
+    return old_status, email_log.status
+
+
 def process_message(
     db: Session,
     message_id: str | None,
@@ -135,6 +247,7 @@ def process_message(
         subject=subject,
         body_snippet=plain_text_body.strip()[:280],
         full_body=plain_text_body or html_body or "",
+        html_body=html_body or None,
         detected_language=classification.language,
         status=EmailStatus.pending,
         booking_type=classification.booking_type,
@@ -146,53 +259,13 @@ def process_message(
         booking_number=classification.booking_number,
         gyg_ref=classification.gyg_ref,
         total_price=classification.total_price,
+        detected_city=classification.detected_city_name or "",
         raw_customer_name_extraction=classification.raw_customer_name_extraction,
         raw_hotel_extraction=classification.raw_hotel_extraction,
         extraction_source=classification.extraction_source,
         warning_note=classification.warning_note,
     )
-
-    if not classification.is_bus_request:
-        email_log.status = EmailStatus.flagged
-        email_log.warning_note = "Email did not match bus stop request keywords."
-        db.add(email_log)
-        db.flush()
-        return email_log
-
-    if not classification.matched_hotel:
-        email_log.status = EmailStatus.flagged
-        email_log.warning_note = classification.warning_note or "No hotel match found above the configured fuzzy threshold."
-        db.add(email_log)
-        db.flush()
-        return email_log
-
-    email_log.detected_hotel = classification.matched_hotel
-    email_log.assigned_bus_stop = classification.matched_hotel.bus_stop
-
-    if not email_log.assigned_bus_stop:
-        email_log.status = EmailStatus.flagged
-        email_log.warning_note = "Matched hotel has no assigned bus stop."
-        db.add(email_log)
-        db.flush()
-        return email_log
-
-    schedule_resolution = resolve_pickup_schedule(
-        db,
-        email_log.assigned_bus_stop,
-        booking_type=email_log.booking_type,
-        cruise_date=email_log.cruise_date,
-    )
-    email_log.pickup_time_text = (
-        schedule_resolution.schedule.pickup_time.strftime("%H:%M")
-        if schedule_resolution.schedule
-        else MISSING_PICKUP_TIME_PLACEHOLDER
-    )
-    if schedule_resolution.warning_note:
-        if "Pomorie operates Tuesday and Friday only" in schedule_resolution.warning_note:
-            email_log.status = EmailStatus.flagged
-        email_log.warning_note = "\n".join(part for part in [email_log.warning_note, schedule_resolution.warning_note] if part).strip()
-
-    regenerate_email_draft(email_log)
+    apply_classification_to_email(db, email_log, classification, improvement_only=False)
     db.add(email_log)
     db.flush()
     return email_log

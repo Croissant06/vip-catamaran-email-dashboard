@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from cruise_email_dashboard.database.db import SessionLocal, get_db
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, EmailStatus, Hotel, Schedule, User, VehicleType
 from cruise_email_dashboard.dependencies import get_admin_user, template_context, templates
-from cruise_email_dashboard.services.email_poller import poll_now, reset_poll_backoff
+from cruise_email_dashboard.services.classifier import _build_label_map, classify_email, parse_booking_email
+from cruise_email_dashboard.services.email_poller import apply_classification_to_email, poll_now, reset_poll_backoff
 from cruise_email_dashboard.services.mailbox import mailbox_status
 from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, REPLIES_DIR, available_template_files, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
@@ -100,6 +101,56 @@ def admin_mailbox_status(user: User = Depends(get_admin_user)):
     return JSONResponse(mailbox_status())
 
 
+@router.get("/debug-parse/{email_log_id}")
+def admin_debug_parse(email_log_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+    email = db.query(EmailLog).filter(EmailLog.id == email_log_id).first()
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found.")
+
+    html_body = email.html_body or ""
+    text_body = email.full_body or ""
+    parsed = parse_booking_email(
+        subject=email.subject or "",
+        text_body=text_body,
+        html_body=html_body,
+        fallback_sender=email.sender_email or "",
+        fallback_name=email.sender_name or "",
+    )
+    classified = classify_email(
+        db,
+        subject=email.subject or "",
+        body=text_body,
+        threshold=settings.fuzzy_match_threshold,
+        html_body=html_body,
+        fallback_sender=email.sender_email or "",
+        fallback_name=email.sender_name or "",
+    )
+    resolved_bus_stop = classified.matched_bus_stop or (classified.matched_hotel.bus_stop if classified.matched_hotel else None)
+    label_map = _build_label_map(html_body, text_body)
+    return JSONResponse(
+        {
+            "notes_block": parsed.notes_block,
+            "label_map_keys": list(label_map.keys()),
+            "html_body_length": len(html_body) if html_body else 0,
+            "raw_hotel_extraction": parsed.raw_hotel_extraction,
+            "raw_customer_name_extraction": parsed.raw_customer_name_extraction,
+            "extraction_source": classified.extraction_source,
+            "parsed_extraction_source": parsed.extraction_source,
+            "booking_type": parsed.booking_type,
+            "detected_city": parsed.city_name,
+            "matched_hotel_name": classified.matched_hotel.name if classified.matched_hotel else None,
+            "matched_bus_stop_name": resolved_bus_stop.name if resolved_bus_stop else None,
+            "selected_stop_time_text": classified.selected_stop_time_text,
+            "num_adults": classified.num_adults,
+            "num_children": classified.num_children,
+            "stored_num_adults": email.num_adults,
+            "stored_num_children": email.num_children,
+            "classified_extraction_source": classified.extraction_source,
+            "classified_warning_note": classified.warning_note,
+        }
+    )
+
+
 @router.post("/mailbox-status/reset-backoff")
 async def admin_reset_backoff(user: User = Depends(get_admin_user)):
     reset_poll_backoff()
@@ -111,6 +162,50 @@ async def admin_reset_backoff(user: User = Depends(get_admin_user)):
 @router.post("/mailbox-status/run-poll")
 async def admin_run_poll_now(user: User = Depends(get_admin_user)):
     return JSONResponse(await poll_now(SessionLocal, force=False))
+
+
+@router.post("/reprocess-all")
+def admin_reprocess_all(db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+    total = db.query(EmailLog).count()
+    skipped_sent = db.query(EmailLog).filter(EmailLog.status == EmailStatus.sent).count()
+    targets = (
+        db.query(EmailLog)
+        .filter(EmailLog.status.in_([EmailStatus.flagged, EmailStatus.pending]))
+        .order_by(EmailLog.id.asc())
+        .all()
+    )
+
+    improved = 0
+    still_flagged = 0
+    for email in targets:
+        old_status = email.status
+        html_body = email.html_body or ""
+        text_body = email.full_body or ""
+        classified = classify_email(
+            db,
+            subject=email.subject or "",
+            body=text_body,
+            threshold=settings.fuzzy_match_threshold,
+            html_body=html_body,
+            fallback_sender=email.sender_email or "",
+            fallback_name=email.sender_name or "",
+        )
+        _, new_status = apply_classification_to_email(db, email, classified, improvement_only=True)
+        if old_status != new_status:
+            improved += 1
+        if new_status == EmailStatus.flagged:
+            still_flagged += 1
+        print(f"[REPROCESS] id={email.id} - {old_status.value} -> {new_status.value} - {classified.extraction_source}")
+
+    db.commit()
+    return JSONResponse(
+        {
+            "total": total,
+            "improved": improved,
+            "still_flagged": still_flagged,
+            "skipped_sent": skipped_sent,
+        }
+    )
 
 
 @router.post("/hotels")
