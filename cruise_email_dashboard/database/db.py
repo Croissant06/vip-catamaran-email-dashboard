@@ -153,3 +153,9 @@ def _run_reference_data_fixes() -> None:
         upsert_hotel("Favorit Aparthotel", ("Favorit", "Favorit Apart"), "Flower Street Main Bus Stop")
         upsert_hotel("Premier Fort Beach", ("Premier Fort", "Fort Beach"), "Mercury Grand Market")
         upsert_hotel("AluaSoul Sunny Beach", ("AluaSoul",), "Hotel Best Western / Sveshest")
+        upsert_hotel(
+            "Hotel Riva",
+            ("Riva", "Riva Hotel", "Slanchev Bryag Hotel Riva", "Hotel Riva Sunny Beach"),
+            "Royal Sun / Arda Bus Stop",
+        )
+        upsert_hotel("Step Family Hotel", ("Step Family", "Stepfamily Hotel", "Step Hotel"), "Flower Street Main Bus Stop")

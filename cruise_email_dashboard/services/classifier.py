@@ -109,6 +109,7 @@ HOTEL_HINT_TOKENS = (
     "marina",
     "wave",
 )
+PLUS_CODE_PATTERN = re.compile(r"^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}$", re.IGNORECASE)
 
 
 @dataclass
@@ -744,6 +745,7 @@ def classify_email(
 
     booking_email = is_booking_email(subject, body)
     booking = parse_booking_email(subject, body, html_body, fallback_sender, fallback_name) if booking_email else BookingParseResult()
+    normalized_raw_hotel = _normalize_spaces(booking.raw_hotel_extraction)
 
     if booking.booking_type == "OBZOR":
         city = db.query(City).filter(City.name == "Obzor").first()
@@ -755,9 +757,10 @@ def classify_email(
         city = _city_from_result_or_text(db, booking, body, subject, booking.raw_hotel_extraction, booking.notes_block)
 
     if not city and booking.raw_hotel_extraction:
-        hotel_any_city, _ = extract_hotel(db, body=body, threshold=threshold, city=None, raw_hotel_name=booking.raw_hotel_extraction)
-        if hotel_any_city and hotel_any_city.city:
-            city = hotel_any_city.city
+        if not PLUS_CODE_PATTERN.fullmatch(normalized_raw_hotel):
+            hotel_any_city, _ = extract_hotel(db, body=body, threshold=threshold, city=None, raw_hotel_name=booking.raw_hotel_extraction)
+            if hotel_any_city and hotel_any_city.city:
+                city = hotel_any_city.city
 
     language = booking.template_language if booking_email else detect_language(body or subject)
     bus_request = is_bus_stop_email(subject, body)
@@ -767,7 +770,7 @@ def classify_email(
         threshold=threshold,
         city=city,
     ) if bus_request else (None, 0.0, "")
-    if bus_request and not matched_stop:
+    if bus_request and not matched_stop and not PLUS_CODE_PATTERN.fullmatch(normalized_raw_hotel):
         hotel, score = extract_hotel(
             db,
             body=body,
@@ -780,6 +783,14 @@ def classify_email(
 
     warning_parts = [booking.warning_note] if booking.warning_note else []
     extraction_source = booking.extraction_source
+    if PLUS_CODE_PATTERN.fullmatch(normalized_raw_hotel):
+        hotel = None
+        matched_stop = None
+        score = 0.0
+        extraction_source = "plus_code_detected"
+        warning_parts.append(
+            f"Customer provided a Google Maps Plus Code instead of hotel name. Please check the code {booking.raw_hotel_extraction} and assign the correct bus stop manually."
+        )
     if matched_stop:
         hotel = None
         score = max(score, stop_score)
