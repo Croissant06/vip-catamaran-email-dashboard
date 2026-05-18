@@ -112,6 +112,21 @@ HOTEL_HINT_TOKENS = (
     "wave",
 )
 PLUS_CODE_PATTERN = re.compile(r"^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}$", re.IGNORECASE)
+GENERIC_STOP_WORDS = {
+    "hotel",
+    "main",
+    "road",
+    "bus",
+    "stop",
+    "with",
+    "minibus",
+    "june",
+    "july",
+    "august",
+    "september",
+    "up",
+    "to",
+}
 
 
 @dataclass
@@ -533,6 +548,25 @@ def _extract_time_from_stop_field(bus_stop_field: str) -> str:
     return f"{int(match.group(1)):02d}:{match.group(2)}"
 
 
+def _bus_stop_candidates(stop: BusStop) -> list[str]:
+    candidates = [stop.name]
+    base_name = re.sub(r"\s*-\s*with minibus.*$", "", stop.name, flags=re.IGNORECASE).strip()
+    if base_name != stop.name:
+        candidates.append(base_name)
+    slash_parts = [part.strip(" -") for part in re.split(r"/|–|-", base_name) if part.strip(" -")]
+    for part in slash_parts:
+        candidates.append(part)
+        candidates.append(f"{part} bus stop")
+        candidates.append(f"{part} hotel main road bus stop")
+        candidates.append(f"{part} main road bus stop")
+    return [_normalize_spaces(value) for value in candidates if _normalize_spaces(value)]
+
+
+def _meaningful_stop_tokens(value: str) -> set[str]:
+    tokens = set(_normalize_token(value).split())
+    return {token for token in tokens if token and token not in GENERIC_STOP_WORDS}
+
+
 def _extract_notes_block_from_html(html_body: str) -> str:
     if not html_body:
         return ""
@@ -583,7 +617,14 @@ def extract_bus_stop(db: Session, bus_stop_field: str, threshold: int, city: Cit
 
     selected_time = _extract_time_from_stop_field(candidate_text)
     normalized_candidate = re.sub(r"\b\d{1,2}[\s:.]\d{2}\b", " ", candidate_text)
+    normalized_candidate = re.sub(
+        r"\b(?:june|july|august|september|october|november|december|january|february|march|april|may)\b.*$",
+        " ",
+        normalized_candidate,
+        flags=re.IGNORECASE,
+    )
     normalized_candidate = re.sub(r"\s+", " ", normalized_candidate).strip().lower()
+    candidate_tokens = _meaningful_stop_tokens(normalized_candidate)
     query = db.query(BusStop)
     if city:
         query = query.filter(BusStop.city_id == city.id)
@@ -591,15 +632,26 @@ def extract_bus_stop(db: Session, bus_stop_field: str, threshold: int, city: Cit
     best_stop: BusStop | None = None
     best_score = 0.0
     for stop in query.all():
-        stop_name = stop.name.lower()
+        candidate_scores = []
+        for stop_candidate in _bus_stop_candidates(stop):
+            stop_candidate_lower = stop_candidate.lower()
+            stop_tokens = _meaningful_stop_tokens(stop_candidate_lower)
+            if not stop_tokens:
+                continue
+            candidate_scores.extend(
+                [
+                    fuzz.partial_ratio(stop_candidate_lower, normalized_candidate),
+                    fuzz.token_set_ratio(stop_candidate_lower, normalized_candidate),
+                ]
+            )
+            if stop_tokens and stop_tokens.issubset(candidate_tokens):
+                candidate_scores.append(100.0)
+
         address = (stop.address or "").lower()
         description = (stop.description or "").lower()
-        score = max(
-            fuzz.partial_ratio(stop_name, normalized_candidate),
-            fuzz.token_set_ratio(stop_name, normalized_candidate),
-            fuzz.partial_ratio(address, normalized_candidate) if address else 0,
-            fuzz.partial_ratio(description, normalized_candidate) if description else 0,
-        )
+        candidate_scores.append(fuzz.partial_ratio(address, normalized_candidate) if address else 0)
+        candidate_scores.append(fuzz.partial_ratio(description, normalized_candidate) if description else 0)
+        score = max(candidate_scores)
         if score > best_score:
             best_stop = stop
             best_score = score
