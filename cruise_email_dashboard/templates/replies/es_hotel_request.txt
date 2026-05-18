@@ -1,0 +1,12 @@
+Estimado/a {customer_name},
+
+Gracias por su reserva para el {cruise_date}, {cruise_day}.
+
+Para organizar su recogida, ¿podría indicarnos por favor
+el nombre del hotel o complejo donde se alojará?
+
+En cuanto tengamos esta información, le enviaremos su punto
+de recogida y hora asignados lo antes posible.
+
+Saludos cordiales,
+VIP Catamaran

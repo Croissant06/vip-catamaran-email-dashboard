@@ -18,7 +18,7 @@ from cruise_email_dashboard.database.models import EmailLog, EmailStatus
 from cruise_email_dashboard.services.classifier import classify_email
 from cruise_email_dashboard.services.notifications import broker
 from cruise_email_dashboard.services.poll_state import ensure_poll_state_file, load_poll_state, reset_backoff_state, update_poll_state
-from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, regenerate_email_draft
+from cruise_email_dashboard.services.reply_generator import HOTEL_REQUEST_WARNING, MISSING_PICKUP_TIME_PLACEHOLDER, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 from cruise_email_dashboard.settings import settings
 
@@ -193,6 +193,13 @@ def apply_classification_to_email(
     email_log.assigned_bus_stop = classification.matched_bus_stop or (classification.matched_hotel.bus_stop if classification.matched_hotel else None)
 
     if not classification.matched_hotel and not classification.matched_bus_stop:
+        if HOTEL_REQUEST_WARNING in (email_log.warning_note or ""):
+            email_log.pickup_time_text = ""
+            email_log.assigned_bus_stop = None
+            email_log.detected_hotel = None
+            email_log.status = _choose_status(old_status, EmailStatus.pending, improvement_only)
+            regenerate_email_draft(email_log)
+            return old_status, email_log.status
         email_log.pickup_time_text = ""
         email_log.draft_reply = ""
         email_log.status = _choose_status(old_status, EmailStatus.flagged, improvement_only)

@@ -52,6 +52,11 @@
                 This is a cancellation notification. No reply is required.
             </div>
             {% endif %}
+            {% if "No hotel provided by customer" in (email.warning_note or "") %}
+            <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                Hotel name not provided — this reply asks the customer for their hotel.
+            </div>
+            {% endif %}
             {% if email.status.value == "flagged" and email.warning_note %}
             <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 whitespace-pre-wrap">
                 {{ email.warning_note }}

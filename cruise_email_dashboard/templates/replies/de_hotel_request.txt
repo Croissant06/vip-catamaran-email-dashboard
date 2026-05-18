@@ -1,0 +1,12 @@
+Sehr geehrte/r {customer_name},
+
+Vielen Dank für Ihre Buchung für den {cruise_date}, {cruise_day}.
+
+Damit wir Ihre Abholung organisieren können, teilen Sie uns bitte
+den Namen des Hotels oder der Anlage mit, in der Sie übernachten.
+
+Sobald wir diese Information haben, senden wir Ihnen so schnell
+wie möglich Ihren Abholpunkt und Ihre Abholzeit.
+
+Mit freundlichen Grüßen
+VIP Catamaran

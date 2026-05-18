@@ -1,0 +1,12 @@
+Dear {customer_name},
+
+Thank you for your booking for {cruise_date}, {cruise_day}!
+
+In order to arrange your pickup, could you please let us know
+the name of the hotel or complex you are staying at?
+
+Once we have this information we will send you your designated
+pickup point and time as soon as possible.
+
+Kind Regards,
+VIP Catamaran

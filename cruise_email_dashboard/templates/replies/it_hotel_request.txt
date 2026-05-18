@@ -1,0 +1,12 @@
+Gentile {customer_name},
+
+La ringraziamo per la sua prenotazione per il {cruise_date}, {cruise_day}.
+
+Per organizzare il suo trasferimento, potrebbe indicarci per favore
+il nome dell'hotel o del complesso in cui soggiornerà?
+
+Non appena avremo questa informazione, le invieremo al più presto
+il punto di raccolta e l'orario assegnati.
+
+Cordiali saluti,
+VIP Catamaran
