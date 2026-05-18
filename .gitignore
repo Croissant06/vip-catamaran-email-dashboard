@@ -1,6 +1,9 @@
 .env
 *.env
+app.db
+cruise_email_dashboard/app.db
 __pycache__/
 *.pyc
 uvicorn*.log
+uvicorn.err.log
 data/poll_state.json
