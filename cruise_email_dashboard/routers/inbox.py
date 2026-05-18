@@ -62,6 +62,7 @@ def inbox_page(
     start_date: str = Query(default=""),
     end_date: str = Query(default=""),
     quick_range: str = Query(default=""),
+    highlight: int | None = Query(default=None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -129,6 +130,7 @@ def inbox_page(
             },
             filtered_count=len(emails),
             filter_summary=_filter_summary(quick_range, start_date, end_date),
+            highlight_id=highlight,
         ),
     )
 

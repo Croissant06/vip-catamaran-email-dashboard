@@ -10,6 +10,14 @@ from cruise_email_dashboard.settings import settings
 logger = logging.getLogger(__name__)
 
 
+def _recipient_for_email(email_log: EmailLog) -> str:
+    if settings.demo_mode:
+        if email_log.extraction_source == "demo_booking":
+            return email_log.sender_email
+        return settings.demo_email
+    return email_log.sender_email
+
+
 def send_reply(email_log: EmailLog) -> None:
     if settings.safe_mode:
         raise RuntimeError("SAFE_MODE is enabled; outbound email is disabled.")
@@ -25,7 +33,7 @@ def send_reply(email_log: EmailLog) -> None:
         else f"Re: {email_log.subject}"
     )
     msg["From"] = settings.smtp_user
-    msg["To"] = settings.demo_email if settings.demo_mode else email_log.sender_email
+    msg["To"] = _recipient_for_email(email_log)
     msg.set_content(email_log.draft_reply)
 
     server = None

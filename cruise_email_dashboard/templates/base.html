@@ -28,7 +28,8 @@
                     <a href="/logs" class="block px-3 py-2 {% if active_path.startswith('/logs') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">History & Logs</a>
                     <a href="/map" class="block px-3 py-2 {% if active_path.startswith('/map') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">Bus Stop Map</a>
                     {% if current_user.role.value == 'admin' %}
-                    <a href="/admin" class="block px-3 py-2 {% if active_path.startswith('/admin') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">Admin Panel</a>
+                    <a href="/admin" class="block px-3 py-2 {% if active_path == '/admin' %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">Admin Panel</a>
+                    <a href="/admin/create-demo-booking" class="block px-3 py-2 {% if active_path.startswith('/admin/create-demo-booking') %}bg-indigo-700 rounded-md{% else %}hover:bg-gray-800 rounded-md{% endif %}">Create Demo Booking</a>
                     {% endif %}
                 </nav>
                 <div class="mt-auto rounded-xl bg-gray-800 p-4 text-sm">

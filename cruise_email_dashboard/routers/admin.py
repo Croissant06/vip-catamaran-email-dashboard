@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, date, datetime, timedelta
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -37,6 +38,20 @@ TEMPLATE_PLACEHOLDERS = [
     "{company_phone}",
     "{support_contact_info}",
 ]
+DEMO_CITY_BOOKING_TYPES = {
+    "Sunny Beach": [
+        {"value": "MORNING", "label": "Morning"},
+        {"value": "AFTERNOON", "label": "Afternoon"},
+        {"value": "SUNSET", "label": "Sunset"},
+        {"value": "ANASTASIA", "label": "Anastasia"},
+    ],
+    "Obzor": [
+        {"value": "OBZOR", "label": "Obzor Route"},
+    ],
+    "Pomorie": [
+        {"value": "POMORIE", "label": "Tuesday / Friday Morning"},
+    ],
+}
 
 
 def _parse_optional_int(value: str) -> int | None:
@@ -77,6 +92,50 @@ def _reply_template_payload() -> list[dict[str, str | bool]]:
     return payload
 
 
+def _city_sort_key(city: City) -> tuple[int, str]:
+    order = {"Sunny Beach": 0, "Obzor": 1, "Pomorie": 2}
+    return order.get(city.name, 99), city.name
+
+
+def _demo_booking_payload(db: Session) -> tuple[list[City], dict[str, list[dict[str, str | int]]], dict[str, list[dict[str, str]]]]:
+    cities = sorted(db.query(City).order_by(City.name).all(), key=_city_sort_key)
+    hotels = db.query(Hotel).order_by(Hotel.name).all()
+    city_hotels: dict[str, list[dict[str, str | int]]] = {str(city.id): [] for city in cities}
+    city_booking_types: dict[str, list[dict[str, str]]] = {}
+
+    for hotel in hotels:
+        if hotel.city_id is None:
+            continue
+        city_hotels.setdefault(str(hotel.city_id), []).append({"id": hotel.id, "name": hotel.name})
+
+    for city in cities:
+        city_hotels[str(city.id)] = sorted(city_hotels.get(str(city.id), []), key=lambda item: str(item["name"]).lower())
+        city_booking_types[str(city.id)] = DEMO_CITY_BOOKING_TYPES.get(city.name, DEMO_CITY_BOOKING_TYPES["Sunny Beach"])
+
+    return cities, city_hotels, city_booking_types
+
+
+def _next_demo_cruise_date(booking_type: str) -> date:
+    candidate = datetime.now(UTC).date() + timedelta(days=1)
+    if booking_type != "POMORIE":
+        return candidate
+    while candidate.weekday() not in {1, 4}:
+        candidate += timedelta(days=1)
+    return candidate
+
+
+def _demo_booking_subject(booking_type: str) -> str:
+    subjects = {
+        "MORNING": "Morning VIP Catamaran Booking Confirmation",
+        "AFTERNOON": "Afternoon VIP Catamaran Booking Confirmation",
+        "SUNSET": "Sunset Cruise - VIP Catamaran Booking Confirmation",
+        "ANASTASIA": "Anastasia VIP Catamaran Booking Confirmation",
+        "OBZOR": "Obzor & Old Nessebar VIP Catamaran Booking Confirmation",
+        "POMORIE": "Pomorie VIP Catamaran Booking Confirmation",
+    }
+    return subjects.get(booking_type, "VIP Catamaran Booking Confirmation")
+
+
 @router.get("")
 def admin_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     return templates.TemplateResponse(
@@ -94,6 +153,93 @@ def admin_page(request: Request, db: Session = Depends(get_db), user: User = Dep
             template_placeholders=TEMPLATE_PLACEHOLDERS,
         ),
     )
+
+
+@router.get("/create-demo-booking")
+def admin_demo_booking_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+    cities, city_hotels, city_booking_types = _demo_booking_payload(db)
+    default_city_id = cities[0].id if cities else None
+    return templates.TemplateResponse(
+        "demo_booking.html",
+        template_context(
+            request,
+            user=user,
+            cities=cities,
+            city_hotels=city_hotels,
+            city_booking_types=city_booking_types,
+            default_city_id=default_city_id,
+        ),
+    )
+
+
+@router.post("/create-demo-booking")
+def admin_create_demo_booking(
+    customer_name: str = Form("Demo Guest"),
+    sender_email: str = Form("pressiyan@gmail.com"),
+    city_id: int = Form(...),
+    hotel_id: int = Form(...),
+    booking_type: str = Form(...),
+    num_adults: int = Form(2),
+    num_children: int = Form(0),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    city = db.query(City).filter(City.id == city_id).first()
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if not city or not hotel or hotel.city_id != city.id:
+        raise HTTPException(status_code=400, detail="Selected city or hotel is invalid.")
+    if hotel.bus_stop is None:
+        raise HTTPException(status_code=400, detail="Selected hotel does not have an assigned bus stop.")
+
+    allowed_booking_types = {item["value"] for item in DEMO_CITY_BOOKING_TYPES.get(city.name, [])}
+    if booking_type not in allowed_booking_types:
+        raise HTTPException(status_code=400, detail="Selected booking type is not valid for that city.")
+
+    cruise_date = _next_demo_cruise_date(booking_type)
+    received_at = datetime.now(UTC).replace(tzinfo=None)
+    booking_number = f"DEMO-{received_at:%Y%m%d%H%M%S}"
+    email_log = EmailLog(
+        message_id=f"<demo-{uuid4()}@vipcatamaran.local>",
+        received_at=received_at,
+        sender_email=sender_email.strip(),
+        sender_name=customer_name.strip() or "Demo Guest",
+        subject=_demo_booking_subject(booking_type),
+        body_snippet=f"Demo booking for {hotel.name} ({city.name})",
+        full_body=f"Demo booking generated from admin panel for {hotel.name}, {city.name}.",
+        html_body=None,
+        detected_language="en",
+        template_language="en",
+        booking_type=booking_type,
+        cruise_date=cruise_date,
+        num_adults=max(num_adults, 1),
+        num_children=max(num_children, 0),
+        booking_number=booking_number,
+        gyg_ref=f"DEMO{received_at:%H%M%S}",
+        total_price="",
+        detected_city=city.name,
+        raw_customer_name_extraction=customer_name.strip() or "Demo Guest",
+        raw_hotel_extraction=hotel.name,
+        extraction_source="demo_booking",
+        status=EmailStatus.pending,
+        warning_note="",
+        is_new=True,
+    )
+    email_log.detected_hotel = hotel
+    email_log.assigned_bus_stop = hotel.bus_stop
+    db.add(email_log)
+    db.flush()
+
+    schedule_resolution = resolve_pickup_schedule(db, hotel.bus_stop, booking_type, cruise_date)
+    email_log.pickup_time_text = (
+        schedule_resolution.schedule.pickup_time.strftime("%H:%M")
+        if schedule_resolution.schedule
+        else MISSING_PICKUP_TIME_PLACEHOLDER
+    )
+    email_log.warning_note = schedule_resolution.warning_note or ""
+    regenerate_email_draft(email_log)
+    email_log.status = EmailStatus.pending
+    db.commit()
+    return RedirectResponse(url=f"/inbox?highlight={email_log.id}", status_code=303)
 
 
 @router.get("/mailbox-status")

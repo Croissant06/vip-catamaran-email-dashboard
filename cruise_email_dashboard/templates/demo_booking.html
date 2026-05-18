@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block header_title %}Create Demo Booking{% endblock %}
+{% block header_subtitle %}Generate a realistic test booking and route it through the normal draft pipeline{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl">
+    <div class="rounded-xl bg-white p-6 shadow md:p-8">
+        <h2 class="text-lg font-semibold text-gray-900">Demo Booking Generator</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            Create a realistic booking record, assign the matching pickup stop, and open it in the inbox ready for review.
+        </p>
+        <form method="post" action="/admin/create-demo-booking" class="mt-6 space-y-5">
+            <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">Customer name</span>
+                    <input
+                        type="text"
+                        name="customer_name"
+                        value="Demo Guest"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    >
+                </label>
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">Your email</span>
+                    <input
+                        type="email"
+                        name="sender_email"
+                        value="pressiyan@gmail.com"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    >
+                </label>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">City</span>
+                    <select
+                        id="demoCitySelect"
+                        name="city_id"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    >
+                        {% for city in cities %}
+                        <option value="{{ city.id }}" {% if default_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">Hotel</span>
+                    <select
+                        id="demoHotelSelect"
+                        name="hotel_id"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    ></select>
+                </label>
+            </div>
+            <div class="grid gap-4 md:grid-cols-3">
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">Booking type</span>
+                    <select
+                        id="demoBookingTypeSelect"
+                        name="booking_type"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    ></select>
+                </label>
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">Number of adults</span>
+                    <input
+                        type="number"
+                        name="num_adults"
+                        value="2"
+                        min="1"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    >
+                </label>
+                <label class="space-y-2 text-sm text-gray-700">
+                    <span class="font-medium">Number of children</span>
+                    <input
+                        type="number"
+                        name="num_children"
+                        value="0"
+                        min="0"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    >
+                </label>
+            </div>
+            <div class="rounded-lg bg-indigo-50 p-4 text-sm text-indigo-900">
+                The generated booking uses the selected hotel and city data from the database, picks the next valid cruise date automatically, and drops you back into the inbox with the new row highlighted.
+            </div>
+            <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">
+                Generate Demo Booking
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const cityHotels = {{ city_hotels | tojson }};
+const cityBookingTypes = {{ city_booking_types | tojson }};
+
+const citySelect = document.getElementById("demoCitySelect");
+const hotelSelect = document.getElementById("demoHotelSelect");
+const bookingTypeSelect = document.getElementById("demoBookingTypeSelect");
+
+function rebuildSelect(select, items, valueKey, labelKey) {
+    select.innerHTML = "";
+    items.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item[valueKey];
+        option.textContent = item[labelKey];
+        select.appendChild(option);
+    });
+}
+
+function refreshDemoFormOptions() {
+    const cityId = citySelect.value;
+    rebuildSelect(hotelSelect, cityHotels[cityId] || [], "id", "name");
+    rebuildSelect(bookingTypeSelect, cityBookingTypes[cityId] || [], "value", "label");
+}
+
+citySelect?.addEventListener("change", refreshDemoFormOptions);
+refreshDemoFormOptions();
+</script>
+{% endblock %}
