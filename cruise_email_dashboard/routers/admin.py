@@ -624,6 +624,7 @@ def save_settings(
     fuzzy_match_threshold: int = Form(...),
     secret_key: str = Form(...),
     safe_mode: str = Form("true"),
+    demo_mode: str = Form("false"),
     user: User = Depends(get_admin_user),
 ):
     update_env(
@@ -642,6 +643,7 @@ def save_settings(
             "FUZZY_MATCH_THRESHOLD": str(fuzzy_match_threshold),
             "SECRET_KEY": secret_key,
             "SAFE_MODE": safe_mode,
+            "DEMO_MODE": demo_mode,
         }
     )
     return RedirectResponse(url="/admin", status_code=303)

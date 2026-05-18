@@ -147,11 +147,33 @@
                     <input type="number" name="fuzzy_match_threshold" value="{{ settings.fuzzy_match_threshold }}" placeholder="Threshold" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <input name="secret_key" value="{{ settings.secret_key }}" placeholder="Secret key" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input type="hidden" name="safe_mode" value="false">
-                    <input type="checkbox" name="safe_mode" value="true" {% if settings.safe_mode %}checked{% endif %} class="h-4 w-4 rounded border-gray-300 text-indigo-600">
-                    Safe mode
-                </label>
+                <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <div class="text-sm font-medium text-gray-800">Safe mode</div>
+                            <div class="text-xs text-gray-500">When enabled, outbound email sending is blocked.</div>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input type="hidden" name="safe_mode" value="false">
+                            <input type="checkbox" name="safe_mode" value="true" {% if settings.safe_mode %}checked{% endif %} class="h-4 w-4 rounded border-gray-300 text-indigo-600">
+                            <span>On</span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-3">
+                        <div>
+                            <div class="text-sm font-medium text-gray-800">Demo mode</div>
+                            <div class="text-xs text-gray-500">
+                                Redirect normal replies to the configured demo inbox without restarting the server.
+                            </div>
+                            <div class="mt-1 text-xs text-indigo-700">Current demo email: {{ settings.demo_email or "Not configured" }}</div>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input type="hidden" name="demo_mode" value="false">
+                            <input type="checkbox" name="demo_mode" value="true" {% if settings.demo_mode %}checked{% endif %} class="h-4 w-4 rounded border-gray-300 text-indigo-600">
+                            <span>On</span>
+                        </label>
+                    </div>
+                </div>
                 <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Settings</button>
             </form>
         </div>

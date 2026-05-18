@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, fields
 import os
 from pathlib import Path
 from urllib.parse import urlparse
@@ -12,25 +12,30 @@ ENV_PATH = BASE_DIR / ".env"
 load_dotenv(ENV_PATH)
 
 
+def _env_bool(name: str, default: str = "false") -> bool:
+    raw = os.getenv(name, default)
+    return str(raw).strip().strip("\"'").lower() == "true"
+
+
 @dataclass
 class Settings:
-    imap_host: str = os.getenv("IMAP_HOST", "mail.vipcatamaran.com")
-    imap_port: int = int(os.getenv("IMAP_PORT", "993"))
-    imap_user: str = os.getenv("IMAP_USER", "bookings@vipcatamaran.com")
-    imap_password: str = os.getenv("IMAP_PASSWORD", "")
-    smtp_host: str = os.getenv("SMTP_HOST", "mail.vipcatamaran.com")
-    smtp_port: int = int(os.getenv("SMTP_PORT", "465"))
-    smtp_user: str = os.getenv("SMTP_USER", "bookings@vipcatamaran.com")
-    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
-    poll_interval_minutes: int = int(os.getenv("POLL_INTERVAL_MINUTES", "5"))
-    poll_backoff_minutes: int = int(os.getenv("POLL_BACKOFF_MINUTES", "30"))
-    mail_timeout_seconds: int = int(os.getenv("MAIL_TIMEOUT_SECONDS", "10"))
-    fuzzy_match_threshold: int = int(os.getenv("FUZZY_MATCH_THRESHOLD", "80"))
-    secret_key: str = os.getenv("SECRET_KEY", "change-me")
-    safe_mode: bool = os.getenv("SAFE_MODE", "true").lower() == "true"
-    demo_mode: bool = os.getenv("DEMO_MODE", "false").lower() == "true"
-    demo_email: str = os.getenv("DEMO_EMAIL", "")
-    database_url: str = os.getenv("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'cruise_email_dashboard' / 'app.db').as_posix()}")
+    imap_host: str = field(default_factory=lambda: os.getenv("IMAP_HOST", "mail.vipcatamaran.com"))
+    imap_port: int = field(default_factory=lambda: int(os.getenv("IMAP_PORT", "993")))
+    imap_user: str = field(default_factory=lambda: os.getenv("IMAP_USER", "bookings@vipcatamaran.com"))
+    imap_password: str = field(default_factory=lambda: os.getenv("IMAP_PASSWORD", ""))
+    smtp_host: str = field(default_factory=lambda: os.getenv("SMTP_HOST", "mail.vipcatamaran.com"))
+    smtp_port: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "465")))
+    smtp_user: str = field(default_factory=lambda: os.getenv("SMTP_USER", "bookings@vipcatamaran.com"))
+    smtp_password: str = field(default_factory=lambda: os.getenv("SMTP_PASSWORD", ""))
+    poll_interval_minutes: int = field(default_factory=lambda: int(os.getenv("POLL_INTERVAL_MINUTES", "5")))
+    poll_backoff_minutes: int = field(default_factory=lambda: int(os.getenv("POLL_BACKOFF_MINUTES", "30")))
+    mail_timeout_seconds: int = field(default_factory=lambda: int(os.getenv("MAIL_TIMEOUT_SECONDS", "10")))
+    fuzzy_match_threshold: int = field(default_factory=lambda: int(os.getenv("FUZZY_MATCH_THRESHOLD", "80")))
+    secret_key: str = field(default_factory=lambda: os.getenv("SECRET_KEY", "change-me"))
+    safe_mode: bool = field(default_factory=lambda: _env_bool("SAFE_MODE", "true"))
+    demo_mode: bool = field(default_factory=lambda: _env_bool("DEMO_MODE", "false"))
+    demo_email: str = field(default_factory=lambda: os.getenv("DEMO_EMAIL", ""))
+    database_url: str = field(default_factory=lambda: os.getenv("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'cruise_email_dashboard' / 'app.db').as_posix()}"))
 
     @property
     def imap_server(self) -> str:
@@ -51,7 +56,12 @@ def normalize_mail_host(value: str) -> str:
 def reload_settings() -> Settings:
     global settings
     load_dotenv(ENV_PATH, override=True)
-    settings = Settings()
+    refreshed = Settings()
+    if "settings" in globals():
+        for item in fields(Settings):
+            setattr(settings, item.name, getattr(refreshed, item.name))
+        return settings
+    settings = refreshed
     return settings
 
 
