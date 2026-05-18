@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import RedirectResponse
@@ -14,6 +15,43 @@ from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 
 router = APIRouter(prefix="/inbox", tags=["inbox"])
+SOFIA_TZ = ZoneInfo("Europe/Sofia")
+DEFAULT_QUICK_RANGE = "last_7_days"
+
+
+def _today_local() -> date:
+    return datetime.now(SOFIA_TZ).date()
+
+
+def _quick_range_dates(quick_range: str) -> tuple[str, str]:
+    today = _today_local()
+    if quick_range == "today":
+        start = end = today
+    elif quick_range == "last_30_days":
+        start = today - timedelta(days=29)
+        end = today
+    else:
+        start = today - timedelta(days=6)
+        end = today
+    return start.isoformat(), end.isoformat()
+
+
+def _filter_summary(quick_range: str, start_date: str, end_date: str) -> str:
+    labels = {
+        "today": "today",
+        "last_7_days": "the last 7 days",
+        "last_30_days": "the last 30 days",
+        "all": "all dates",
+    }
+    if quick_range in labels:
+        return labels[quick_range]
+    if start_date and end_date:
+        return f"{start_date} to {end_date}"
+    if start_date:
+        return f"{start_date} onward"
+    if end_date:
+        return f"through {end_date}"
+    return "all dates"
 
 
 @router.get("")
@@ -23,9 +61,44 @@ def inbox_page(
     language: str = Query(default=""),
     start_date: str = Query(default=""),
     end_date: str = Query(default=""),
+    quick_range: str = Query(default=""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    has_explicit_filters = any(
+        value
+        for value in [status, language, start_date, end_date, quick_range]
+    )
+    saved_filters = request.session.get("inbox_filters", {})
+
+    if not has_explicit_filters and saved_filters:
+        status = saved_filters.get("status", "")
+        language = saved_filters.get("language", "")
+        start_date = saved_filters.get("start_date", "")
+        end_date = saved_filters.get("end_date", "")
+        quick_range = saved_filters.get("quick_range", DEFAULT_QUICK_RANGE)
+    elif not has_explicit_filters:
+        quick_range = DEFAULT_QUICK_RANGE
+
+    if quick_range in {"today", "last_7_days", "last_30_days"}:
+        start_date, end_date = _quick_range_dates(quick_range)
+    elif quick_range == "all":
+        start_date = ""
+        end_date = ""
+    elif start_date or end_date:
+        quick_range = "custom"
+    else:
+        quick_range = DEFAULT_QUICK_RANGE
+        start_date, end_date = _quick_range_dates(quick_range)
+
+    request.session["inbox_filters"] = {
+        "status": status,
+        "language": language,
+        "start_date": start_date,
+        "end_date": end_date,
+        "quick_range": quick_range,
+    }
+
     query = db.query(EmailLog).options(joinedload(EmailLog.detected_hotel), joinedload(EmailLog.assigned_bus_stop))
     if status:
         query = query.filter(EmailLog.status == status)
@@ -47,7 +120,15 @@ def inbox_page(
             emails=emails,
             unread_count=unread_count,
             languages=languages,
-            filters={"status": status, "language": language, "start_date": start_date, "end_date": end_date},
+            filters={
+                "status": status,
+                "language": language,
+                "start_date": start_date,
+                "end_date": end_date,
+                "quick_range": quick_range,
+            },
+            filtered_count=len(emails),
+            filter_summary=_filter_summary(quick_range, start_date, end_date),
         ),
     )
 

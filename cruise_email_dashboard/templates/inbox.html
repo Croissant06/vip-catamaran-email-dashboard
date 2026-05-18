@@ -1,8 +1,31 @@
 {% extends "base.html" %}
 {% block header_title %}Inbox{% endblock %}
-{% block header_subtitle %}Incoming customer requests and automated assignments{% endblock %}
+{% block header_subtitle %}Showing {{ filtered_count }} emails from {{ filter_summary }}{% endblock %}
 {% block content %}
-<form method="get" class="mb-6 grid gap-3 rounded-xl bg-white p-4 shadow md:grid-cols-4">
+<div class="mb-6 rounded-xl bg-white p-4 shadow">
+    <div class="mb-4 flex flex-wrap gap-2">
+        {% for value, label in [
+            ("today", "Today"),
+            ("last_7_days", "Last 7 days"),
+            ("last_30_days", "Last 30 days"),
+            ("all", "All"),
+        ] %}
+        <form method="get">
+            <input type="hidden" name="status" value="{{ filters.status }}">
+            <input type="hidden" name="language" value="{{ filters.language }}">
+            <button
+                type="submit"
+                name="quick_range"
+                value="{{ value }}"
+                class="rounded-md px-4 py-2 text-sm transition duration-150 {% if filters.quick_range == value %}bg-indigo-600 text-white hover:bg-indigo-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}"
+            >
+                {{ label }}
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+    <form method="get" class="grid gap-3 md:grid-cols-4">
+        <input type="hidden" name="quick_range" value="custom">
     <select name="status" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="">All statuses</option>
         {% for item in ["pending", "sent", "flagged", "manual", "cancelled"] %}
@@ -19,6 +42,7 @@
     </select>
     <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 md:col-span-4 md:justify-self-start">Apply filters</button>
 </form>
+</div>
 <div class="overflow-x-auto rounded-xl bg-white shadow">
     <table class="min-w-full text-sm">
         <thead class="bg-gray-50 text-left text-gray-500">
