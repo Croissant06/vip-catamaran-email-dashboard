@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 BOOKING_TRIGGER = "you have just received a new booking!"
 BOOKEO_TRIGGER = "powered by bookeo"
+PERSONAL_EMAIL_DOMAINS = {"gmail.com", "hotmail.com", "yahoo.com", "outlook.com"}
+PAYMENT_KEYWORDS = ("paid", "payment", "pay", "invoice", "receipt", "confirmation")
 BUS_KEYWORDS = {
     "bus",
     "pickup",
@@ -345,6 +347,46 @@ def _detect_non_booking_notification(subject: str) -> bool:
         or "special offer" in subject_lower
         or "get ahead" in subject_lower
     )
+
+
+def _sender_domain(sender: str) -> str:
+    sender_lower = (sender or "").strip().lower()
+    if "@" not in sender_lower:
+        return ""
+    return sender_lower.rsplit("@", 1)[1]
+
+
+def _is_booking_platform_sender(sender: str) -> bool:
+    sender_lower = (sender or "").lower()
+    domain = _sender_domain(sender)
+    return any(
+        token in sender_lower
+        for token in (
+            "getyourguide",
+            "reply.getyourguide.com",
+            "bookeo",
+            "viator.com",
+            "tripadvisor.com",
+            "expmessaging",
+        )
+    ) or domain in {"notification.getyourguide.com", "reply.getyourguide.com"}
+
+
+def _detect_customer_reply(subject: str) -> bool:
+    subject_value = (subject or "").strip().lower()
+    return subject_value.startswith("re:")
+
+
+def _detect_payment_query(sender: str, subject: str, text_body: str, html_body: str) -> bool:
+    if _is_booking_platform_sender(sender):
+        return False
+    html_text = BeautifulSoup(html_body, "html.parser").get_text("\n", strip=True) if html_body else ""
+    combined = f"{subject}\n{text_body}\n{html_text}".lower()
+    return any(keyword in combined for keyword in PAYMENT_KEYWORDS)
+
+
+def _detect_direct_customer_email(sender: str) -> bool:
+    return _sender_domain(sender) in PERSONAL_EMAIL_DOMAINS and not _is_booking_platform_sender(sender)
 
 
 def _detect_viator(sender: str, text_body: str, html_body: str) -> bool:
@@ -749,6 +791,66 @@ def classify_email(
     fallback_sender: str = "",
     fallback_name: str = "",
 ) -> ClassificationResult:
+    if _detect_customer_reply(subject):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=False,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="customer_reply_detected",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Customer reply - manual response required",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
+    if _detect_payment_query(fallback_sender, subject, body, html_body):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=False,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="payment_query_detected",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Payment query - manual response required",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
     if _detect_booking_change(subject):
         language = detect_language(body or subject)
         return ClassificationResult(
@@ -865,6 +967,36 @@ def classify_email(
             detected_city_name="",
             gyg_ref="",
             warning_note="Viator booking - manual processing required",
+            resolved_status=EmailStatus.flagged,
+            selected_stop_time_text="",
+        )
+
+    if _detect_direct_customer_email(fallback_sender):
+        language = detect_language(body or subject)
+        return ClassificationResult(
+            language=language,
+            matched_hotel=None,
+            matched_bus_stop=None,
+            score=0.0,
+            is_bus_request=False,
+            is_booking_email=False,
+            booking_type="",
+            cruise_date=None,
+            cruise_time=None,
+            num_adults=None,
+            num_children=None,
+            booking_number="",
+            total_price="",
+            customer_name=fallback_name or "Guest",
+            customer_email=fallback_sender,
+            customer_phone="",
+            raw_customer_name_extraction="",
+            raw_hotel_extraction="",
+            extraction_source="direct_customer_email",
+            city=None,
+            detected_city_name="",
+            gyg_ref="",
+            warning_note="Direct customer email - manual response required",
             resolved_status=EmailStatus.flagged,
             selected_stop_time_text="",
         )
