@@ -28,6 +28,8 @@ class Settings:
     fuzzy_match_threshold: int = int(os.getenv("FUZZY_MATCH_THRESHOLD", "80"))
     secret_key: str = os.getenv("SECRET_KEY", "change-me")
     safe_mode: bool = os.getenv("SAFE_MODE", "true").lower() == "true"
+    demo_mode: bool = os.getenv("DEMO_MODE", "false").lower() == "true"
+    demo_email: str = os.getenv("DEMO_EMAIL", "")
     database_url: str = os.getenv("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'cruise_email_dashboard' / 'app.db').as_posix()}")
 
     @property

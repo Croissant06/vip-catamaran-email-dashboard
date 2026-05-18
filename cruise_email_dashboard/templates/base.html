@@ -39,6 +39,11 @@
             </div>
         </aside>
         <div class="flex-1 md:ml-72">
+            {% if demo_mode %}
+            <div class="bg-blue-100 px-4 py-3 text-sm text-blue-800 md:px-8">
+                Demo Mode ON — all replies redirected to {{ demo_email or "the configured demo inbox" }}
+            </div>
+            {% endif %}
             <header class="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur">
                 <div class="flex items-center justify-between px-4 py-4 md:px-8">
                     <button id="sidebarToggle" class="rounded-md border border-gray-300 px-3 py-2 text-sm md:hidden">Menu</button>

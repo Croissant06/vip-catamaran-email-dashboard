@@ -15,6 +15,8 @@ def send_reply(email_log: EmailLog) -> None:
         raise RuntimeError("SAFE_MODE is enabled; outbound email is disabled.")
     if not settings.smtp_host or not settings.smtp_password:
         raise RuntimeError("SMTP credentials are not configured.")
+    if settings.demo_mode and not settings.demo_email:
+        raise RuntimeError("DEMO_MODE is enabled but DEMO_EMAIL is not configured.")
 
     msg = EmailMessage()
     msg["Subject"] = (
@@ -23,7 +25,7 @@ def send_reply(email_log: EmailLog) -> None:
         else f"Re: {email_log.subject}"
     )
     msg["From"] = settings.smtp_user
-    msg["To"] = email_log.sender_email
+    msg["To"] = settings.demo_email if settings.demo_mode else email_log.sender_email
     msg.set_content(email_log.draft_reply)
 
     server = None
