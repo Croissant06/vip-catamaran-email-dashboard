@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 def _recipient_for_email(email_log: EmailLog) -> str:
     if settings.demo_mode:
-        if email_log.extraction_source == "demo_booking":
-            return email_log.sender_email
         return settings.demo_email
     return email_log.sender_email
 
