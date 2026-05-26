@@ -2,19 +2,19 @@
 {% block header_title %}Home{% endblock %}
 {% block header_subtitle %}Analytics overview and recent activity{% endblock %}
 {% block content %}
-<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Emails received today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ total_today }}</div></div>
-    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Emails sent today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ sent_today }}</div></div>
-    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Flagged emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ flagged }}</div></div>
-    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Cancelled emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ cancelled }}</div></div>
-    <div class="rounded-xl bg-white p-6 shadow md:col-span-2 xl:col-span-4"><div class="text-sm text-gray-500">Average response time</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ avg_response }}</div></div>
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="w-full rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Emails received today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ total_today }}</div></div>
+    <div class="w-full rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Emails sent today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ sent_today }}</div></div>
+    <div class="w-full rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Flagged emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ flagged }}</div></div>
+    <div class="w-full rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Cancelled emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ cancelled }}</div></div>
+    <div class="w-full rounded-xl bg-white p-6 shadow sm:col-span-2 xl:col-span-4"><div class="text-sm text-gray-500">Average response time</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ avg_response }}</div></div>
 </div>
 <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+    <div class="w-full min-h-64 rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-4 text-lg font-semibold">Last 7 Days</h2>
         <canvas id="emailsChart" height="120"></canvas>
     </div>
-    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+    <div class="w-full min-h-64 rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-4 text-lg font-semibold">Languages</h2>
         <canvas id="languagesChart" height="220"></canvas>
     </div>
