@@ -34,7 +34,9 @@ def _sender_domain(sender_value: str) -> str:
 
 
 def _should_skip_sender(sender_value: str) -> bool:
-    return _sender_domain(sender_value) == "vipcatamaran.com"
+    _, sender_email = parseaddr(sender_value or "")
+    normalized_email = sender_email.strip().lower()
+    return _sender_domain(sender_value) in {"vipcatamaran.com", "dropbox.com"} or normalized_email == "no-reply@dropbox.com"
 
 
 def _choose_status(old_status: EmailStatus, new_status: EmailStatus, improvement_only: bool) -> EmailStatus:
