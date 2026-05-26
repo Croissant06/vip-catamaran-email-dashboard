@@ -2,13 +2,13 @@
 {% block header_title %}Bus Stop Map{% endblock %}
 {% block header_subtitle %}Live stop overview with linked hotel markers{% endblock %}
 {% block content %}
-<div class="mb-4 flex items-center gap-3">
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
     <label class="inline-flex items-center gap-2 text-sm text-gray-700">
         <input id="toggleHotels" type="checkbox" checked class="h-4 w-4 rounded border-gray-300 text-indigo-600">
         Show hotels
     </label>
 </div>
-<div id="busMap" class="h-[650px] rounded-xl shadow"></div>
+<div id="busMap" class="h-[72vh] min-h-[420px] rounded-xl shadow md:h-[650px]"></div>
 {% endblock %}
 {% block scripts %}
 <script>

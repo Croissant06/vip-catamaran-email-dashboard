@@ -1,9 +1,35 @@
 const sidebarToggle = document.getElementById("sidebarToggle");
 const sidebar = document.getElementById("sidebar");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+const sidebarClose = document.getElementById("sidebarClose");
+
+function openSidebar() {
+    if (!sidebar) {
+        return;
+    }
+    sidebar.classList.remove("-translate-x-full");
+    sidebarBackdrop?.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+}
+
+function closeSidebar() {
+    if (!sidebar) {
+        return;
+    }
+    sidebar.classList.add("-translate-x-full");
+    sidebarBackdrop?.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+}
 
 if (sidebarToggle && sidebar) {
-    sidebarToggle.addEventListener("click", () => {
-        sidebar.classList.toggle("-translate-x-full");
+    sidebarToggle.addEventListener("click", openSidebar);
+    sidebarClose?.addEventListener("click", closeSidebar);
+    sidebarBackdrop?.addEventListener("click", closeSidebar);
+    window.addEventListener("resize", () => {
+        if (window.innerWidth >= 768) {
+            sidebarBackdrop?.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+        }
     });
 }
 

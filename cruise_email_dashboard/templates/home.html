@@ -2,44 +2,47 @@
 {% block header_title %}Home{% endblock %}
 {% block header_subtitle %}Analytics overview and recent activity{% endblock %}
 {% block content %}
-<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Emails received today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ total_today }}</div></div>
-    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Emails sent today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ sent_today }}</div></div>
-    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Flagged emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ flagged }}</div></div>
-    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Cancelled emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ cancelled }}</div></div>
-    <div class="bg-white rounded-xl shadow p-6"><div class="text-sm text-gray-500">Average response time</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ avg_response }}</div></div>
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Emails received today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ total_today }}</div></div>
+    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Emails sent today</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ sent_today }}</div></div>
+    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Flagged emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ flagged }}</div></div>
+    <div class="rounded-xl bg-white p-6 shadow"><div class="text-sm text-gray-500">Cancelled emails</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ cancelled }}</div></div>
+    <div class="rounded-xl bg-white p-6 shadow md:col-span-2 xl:col-span-4"><div class="text-sm text-gray-500">Average response time</div><div class="mt-2 text-3xl font-bold text-indigo-600">{{ avg_response }}</div></div>
 </div>
-<div class="mt-6 grid gap-6 xl:grid-cols-3">
-    <div class="rounded-xl bg-white p-6 shadow xl:col-span-2">
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-4 text-lg font-semibold">Last 7 Days</h2>
         <canvas id="emailsChart" height="120"></canvas>
     </div>
-    <div class="rounded-xl bg-white p-6 shadow">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-4 text-lg font-semibold">Languages</h2>
         <canvas id="languagesChart" height="220"></canvas>
     </div>
 </div>
-<div class="mt-6 rounded-xl bg-white p-6 shadow">
-    <div class="mb-4 flex items-center justify-between">
+<div class="mt-6 rounded-xl bg-white p-4 shadow sm:p-6">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold">Recent Activity</h2>
-        <a href="/inbox" class="text-sm text-indigo-600 hover:text-indigo-700">Open inbox</a>
+        <a href="/inbox" class="inline-flex min-h-11 items-center text-sm text-indigo-600 hover:text-indigo-700">Open inbox</a>
     </div>
     <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
             <thead class="text-left text-gray-500">
                 <tr>
-                    <th class="pb-3">Time</th>
-                    <th class="pb-3">Sender</th>
-                    <th class="pb-3">Subject</th>
+                    <th class="pb-3 pr-3 md:table-cell hidden">Time</th>
+                    <th class="pb-3 pr-3">Sender</th>
+                    <th class="hidden pb-3 pr-3 md:table-cell">Subject</th>
                     <th class="pb-3">Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for email in recent_activity %}
                 <tr class="border-t even:bg-gray-50 hover:bg-indigo-50">
-                    <td class="px-2 py-3">{{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</td>
-                    <td class="px-2 py-3">{{ email.sender_email }}</td>
-                    <td class="px-2 py-3">{{ email.subject }}</td>
+                    <td class="hidden px-2 py-3 md:table-cell">{{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                    <td class="px-2 py-3">
+                        <div class="font-medium text-gray-900">{{ email.sender_name or email.sender_email }}</div>
+                        <div class="text-xs text-gray-500">{{ email.sender_email }}</div>
+                    </td>
+                    <td class="hidden px-2 py-3 md:table-cell">{{ email.subject }}</td>
                     <td class="px-2 py-3">{% include "_status_badge.html" %}</td>
                 </tr>
                 {% endfor %}

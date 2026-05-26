@@ -2,75 +2,75 @@
 {% block header_title %}Admin Panel{% endblock %}
 {% block header_subtitle %}Manage master data, templates, and mailbox settings{% endblock %}
 {% block content %}
-<div class="grid gap-6 xl:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
     <div class="space-y-6">
-        <div class="rounded-xl bg-white p-6 shadow">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
             <form method="post" action="/admin/hotels" class="space-y-3">
-                <input name="name" placeholder="Hotel name" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
-                <select name="city_id" class="hotel-city-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <select name="city_id" class="hotel-city-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     <option value="">City (required)</option>
                     {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
                 </select>
-                <select name="bus_stop_id" class="hotel-stop-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="">
+                <select name="bus_stop_id" class="hotel-stop-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="">
                     <option value="">Bus stop (optional)</option>
                     {% for stop in bus_stops %}<option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}">{{ stop.name }}</option>{% endfor %}
                 </select>
-                <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Hotel</button>
+                <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Hotel</button>
             </form>
         </div>
-        <div class="rounded-xl bg-white p-6 shadow">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Bus Stop</h2>
             <form method="post" action="/admin/bus-stops" class="space-y-3">
-                <input name="name" placeholder="Stop name" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <input name="address" placeholder="Address" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <select name="city_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="name" placeholder="Stop name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="address" placeholder="Address" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <select name="city_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     <option value="">City (required)</option>
                     {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
                 </select>
-                <select name="vehicle_type" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="vehicle_type" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for vehicle_type in vehicle_types %}
                     <option value="{{ vehicle_type.value }}">{{ vehicle_type.value }}</option>
                     {% endfor %}
                 </select>
                 <textarea name="description" placeholder="Landmark description used in replies" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                <input name="maps_url" placeholder="Google Maps URL" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div class="grid gap-3 md:grid-cols-2">
-                    <input type="number" step="0.000001" name="latitude" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                    <input type="number" step="0.000001" name="longitude" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="maps_url" placeholder="Google Maps URL" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <input type="number" step="0.000001" name="latitude" placeholder="Latitude" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <input type="number" step="0.000001" name="longitude" placeholder="Longitude" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 </div>
-                <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Stop</button>
+                <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Stop</button>
             </form>
         </div>
-        <div class="rounded-xl bg-white p-6 shadow">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Schedule</h2>
             <form method="post" action="/admin/schedules" class="space-y-3">
-                <select name="bus_stop_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for stop in bus_stops %}<option value="{{ stop.id }}">{{ stop.name }}</option>{% endfor %}
                 </select>
-                <input type="time" name="pickup_time" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <input name="season_label" placeholder="Season label (default, morning, sunset, september_day)" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <input name="valid_days" placeholder="Valid weekdays as 0,1,2,3,4,5,6" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="time" name="pickup_time" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="season_label" placeholder="Season label (default, morning, sunset, september_day)" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="valid_days" placeholder="Valid weekdays as 0,1,2,3,4,5,6" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <p class="text-xs text-gray-500">0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun</p>
-                <div class="grid gap-3 md:grid-cols-2">
-                    <input type="date" name="valid_from" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="date" name="valid_to" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <input type="date" name="valid_from" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="valid_to" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Schedule</button>
+                <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Schedule</button>
             </form>
         </div>
     </div>
     <div class="space-y-6">
-        <div class="rounded-xl bg-white p-6 shadow">
-            <div class="mb-4 flex items-center justify-between">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+            <div class="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <h2 class="text-lg font-semibold">Mailbox Status</h2>
-                <div class="flex gap-2">
-                    <button type="button" id="refreshMailboxStatus" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Refresh</button>
-                    <button type="button" id="reprocessAllFlagged" class="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-slate-800">Reprocess All Flagged</button>
-                    <button type="button" id="runPollNow" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Run Poll Now</button>
-                    <button type="button" id="resetBackoff" class="rounded-md bg-red-500 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-red-600">Reset Backoff</button>
+                <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <button type="button" id="refreshMailboxStatus" class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-sm text-white transition duration-150 hover:bg-indigo-700">Refresh</button>
+                    <button type="button" id="reprocessAllFlagged" class="min-h-11 rounded-md bg-slate-700 px-3 py-2 text-sm text-white transition duration-150 hover:bg-slate-800">Reprocess All Flagged</button>
+                    <button type="button" id="runPollNow" class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-sm text-white transition duration-150 hover:bg-indigo-700">Run Poll Now</button>
+                    <button type="button" id="resetBackoff" class="min-h-11 rounded-md bg-red-500 px-3 py-2 text-sm text-white transition duration-150 hover:bg-red-600">Reset Backoff</button>
                 </div>
             </div>
             <div class="space-y-3 text-sm">
@@ -92,8 +92,8 @@
                 </div>
             </div>
         </div>
-        <div class="rounded-xl bg-white p-6 shadow">
-            <div class="mb-4 flex items-center justify-between">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-semibold">Reply Templates</h2>
                     <p class="mt-1 text-sm text-gray-500">Each template can be edited live or reset from its backup copy.</p>
@@ -117,9 +117,9 @@
                                 {% if template.has_default %}Default backup ready{% else %}No backup copy found{% endif %}
                             </p>
                         </div>
-                        <div class="flex gap-2">
-                            <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white transition duration-150 hover:bg-indigo-700">Save</button>
-                            <button formaction="/admin/templates/{{ template.name }}/reset" formmethod="post" class="rounded-md bg-gray-200 px-3 py-1.5 text-sm text-gray-700 transition duration-150 hover:bg-gray-300" {% if not template.has_default %}disabled{% endif %}>Reset</button>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <button class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-sm text-white transition duration-150 hover:bg-indigo-700">Save</button>
+                            <button formaction="/admin/templates/{{ template.name }}/reset" formmethod="post" class="min-h-11 rounded-md bg-gray-200 px-3 py-2 text-sm text-gray-700 transition duration-150 hover:bg-gray-300" {% if not template.has_default %}disabled{% endif %}>Reset</button>
                         </div>
                     </div>
                     <textarea name="content" rows="14" class="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ template.content }}</textarea>
@@ -127,26 +127,26 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="rounded-xl bg-white p-6 shadow">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Settings</h2>
             <form method="post" action="/admin/settings" class="space-y-3">
-                <input name="imap_host" value="{{ settings.imap_host }}" placeholder="IMAP host" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="number" name="imap_port" value="{{ settings.imap_port }}" placeholder="IMAP port" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="imap_user" value="{{ settings.imap_user }}" placeholder="IMAP user" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" name="imap_password" value="{{ settings.imap_password }}" placeholder="IMAP password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="smtp_host" value="{{ settings.smtp_host }}" placeholder="SMTP host" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="number" name="smtp_port" value="{{ settings.smtp_port }}" placeholder="SMTP port" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="smtp_user" value="{{ settings.smtp_user }}" placeholder="SMTP user" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" name="smtp_password" value="{{ settings.smtp_password }}" placeholder="SMTP password" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div class="grid gap-3 md:grid-cols-2">
-                    <input type="number" name="poll_interval_minutes" value="{{ settings.poll_interval_minutes }}" placeholder="Poll interval" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" name="poll_backoff_minutes" value="{{ settings.poll_backoff_minutes }}" placeholder="Poll backoff minutes" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="imap_host" value="{{ settings.imap_host }}" placeholder="IMAP host" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" name="imap_port" value="{{ settings.imap_port }}" placeholder="IMAP port" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="imap_user" value="{{ settings.imap_user }}" placeholder="IMAP user" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" name="imap_password" value="{{ settings.imap_password }}" placeholder="IMAP password" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="smtp_host" value="{{ settings.smtp_host }}" placeholder="SMTP host" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" name="smtp_port" value="{{ settings.smtp_port }}" placeholder="SMTP port" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="smtp_user" value="{{ settings.smtp_user }}" placeholder="SMTP user" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" name="smtp_password" value="{{ settings.smtp_password }}" placeholder="SMTP password" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <input type="number" name="poll_interval_minutes" value="{{ settings.poll_interval_minutes }}" placeholder="Poll interval" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" name="poll_backoff_minutes" value="{{ settings.poll_backoff_minutes }}" placeholder="Poll backoff minutes" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div class="grid gap-3 md:grid-cols-2">
-                    <input type="number" name="mail_timeout_seconds" value="{{ settings.mail_timeout_seconds }}" placeholder="Mail timeout seconds" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" name="fuzzy_match_threshold" value="{{ settings.fuzzy_match_threshold }}" placeholder="Threshold" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <input type="number" name="mail_timeout_seconds" value="{{ settings.mail_timeout_seconds }}" placeholder="Mail timeout seconds" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" name="fuzzy_match_threshold" value="{{ settings.fuzzy_match_threshold }}" placeholder="Threshold" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <input name="secret_key" value="{{ settings.secret_key }}" placeholder="Secret key" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="secret_key" value="{{ settings.secret_key }}" placeholder="Secret key" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <div class="flex items-center justify-between gap-4">
                         <div>
@@ -174,92 +174,92 @@
                         </label>
                     </div>
                 </div>
-                <button class="rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Save Settings</button>
+                <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Settings</button>
             </form>
         </div>
     </div>
 </div>
-<div class="mt-6 grid gap-6 xl:grid-cols-3">
-    <div class="rounded-xl bg-white p-6 shadow">
+<div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Hotels</h2>
-        <div class="space-y-2 text-sm">
+        <div class="space-y-2 overflow-x-auto text-sm">
             {% for hotel in hotels %}
             <form method="post" action="/admin/hotels/{{ hotel.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
-                <input name="name" value="{{ hotel.name }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="name" value="{{ hotel.name }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <textarea name="aliases" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ hotel.aliases }}</textarea>
                 <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
-                <select name="city_id" class="hotel-city-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <select name="city_id" class="hotel-city-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     <option value="">City (optional)</option>
                     {% for city in cities %}
                     <option value="{{ city.id }}" {% if hotel.city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
                     {% endfor %}
                 </select>
-                <select name="bus_stop_id" class="hotel-stop-select w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="{{ hotel.bus_stop_id or '' }}">
+                <select name="bus_stop_id" class="hotel-stop-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="{{ hotel.bus_stop_id or '' }}">
                     <option value="">Bus stop (optional)</option>
                     {% for stop in bus_stops %}
                     <option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}" {% if stop.id == hotel.bus_stop_id %}selected{% endif %}>{{ stop.name }}</option>
                     {% endfor %}
                 </select>
-                <div class="flex gap-2">
-                    <button class="rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
-                    <button formaction="/admin/hotels/{{ hotel.id }}/delete" class="rounded-md bg-red-500 px-3 py-2 text-white transition duration-150 hover:bg-red-600">Delete</button>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <button class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
+                    <button formaction="/admin/hotels/{{ hotel.id }}/delete" class="min-h-11 rounded-md bg-red-500 px-3 py-2 text-white transition duration-150 hover:bg-red-600">Delete</button>
                 </div>
             </form>
             {% endfor %}
         </div>
     </div>
-    <div class="rounded-xl bg-white p-6 shadow">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Bus Stops</h2>
-        <div class="space-y-2 text-sm">
+        <div class="space-y-2 overflow-x-auto text-sm">
             {% for stop in bus_stops %}
             <form method="post" action="/admin/bus-stops/{{ stop.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
-                <input name="name" value="{{ stop.name }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="address" value="{{ stop.address }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <select name="city_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input name="name" value="{{ stop.name }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="address" value="{{ stop.address }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="city_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     <option value="">City (optional)</option>
                     {% for city in cities %}
                     <option value="{{ city.id }}" {% if stop.city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
                     {% endfor %}
                 </select>
-                <select name="vehicle_type" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="vehicle_type" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for vehicle_type in vehicle_types %}
                     <option value="{{ vehicle_type.value }}" {% if stop.vehicle_type.value == vehicle_type.value %}selected{% endif %}>{{ vehicle_type.value }}</option>
                     {% endfor %}
                 </select>
                 <textarea name="description" rows="3" placeholder="Pickup description" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ stop.description }}</textarea>
-                <input name="maps_url" value="{{ stop.maps_url }}" placeholder="Google Maps URL" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div class="grid gap-2 md:grid-cols-2">
-                    <input type="number" step="0.000001" name="latitude" value="{{ stop.latitude }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" step="0.000001" name="longitude" value="{{ stop.longitude }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="maps_url" value="{{ stop.maps_url }}" placeholder="Google Maps URL" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input type="number" step="0.000001" name="latitude" value="{{ stop.latitude }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" step="0.000001" name="longitude" value="{{ stop.longitude }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div class="flex gap-2">
-                    <button class="rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
-                    <button formaction="/admin/bus-stops/{{ stop.id }}/delete" class="rounded-md bg-red-500 px-3 py-2 text-white transition duration-150 hover:bg-red-600">Delete</button>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <button class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
+                    <button formaction="/admin/bus-stops/{{ stop.id }}/delete" class="min-h-11 rounded-md bg-red-500 px-3 py-2 text-white transition duration-150 hover:bg-red-600">Delete</button>
                 </div>
             </form>
             {% endfor %}
         </div>
     </div>
-    <div class="rounded-xl bg-white p-6 shadow">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Schedules</h2>
-        <div class="space-y-2 text-sm">
+        <div class="space-y-2 overflow-x-auto text-sm">
             {% for schedule in schedules %}
             <form method="post" action="/admin/schedules/{{ schedule.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
-                <select name="bus_stop_id" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for stop in bus_stops %}
                     <option value="{{ stop.id }}" {% if stop.id == schedule.bus_stop_id %}selected{% endif %}>{{ stop.name }}</option>
                     {% endfor %}
                 </select>
-                <input type="time" name="pickup_time" value="{{ schedule.pickup_time.strftime('%H:%M') }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="season_label" value="{{ schedule.season_label }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input name="valid_days" value="{{ schedule.valid_days }}" placeholder="Valid weekdays as 0,1,2,3,4,5,6" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div class="grid gap-2 md:grid-cols-2">
-                    <input type="date" name="valid_from" value="{{ schedule.valid_from.isoformat() if schedule.valid_from else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="date" name="valid_to" value="{{ schedule.valid_to.isoformat() if schedule.valid_to else '' }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="time" name="pickup_time" value="{{ schedule.pickup_time.strftime('%H:%M') }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="season_label" value="{{ schedule.season_label }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input name="valid_days" value="{{ schedule.valid_days }}" placeholder="Valid weekdays as 0,1,2,3,4,5,6" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input type="date" name="valid_from" value="{{ schedule.valid_from.isoformat() if schedule.valid_from else '' }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="valid_to" value="{{ schedule.valid_to.isoformat() if schedule.valid_to else '' }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div class="flex gap-2">
-                    <button class="rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
-                    <button formaction="/admin/schedules/{{ schedule.id }}/delete" class="rounded-md bg-red-500 px-3 py-2 text-white transition duration-150 hover:bg-red-600">Delete</button>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <button class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-white transition duration-150 hover:bg-indigo-700">Update</button>
+                    <button formaction="/admin/schedules/{{ schedule.id }}/delete" class="min-h-11 rounded-md bg-red-500 px-3 py-2 text-white transition duration-150 hover:bg-red-600">Delete</button>
                 </div>
             </form>
             {% endfor %}
