@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, time
-from dateutil import parser as date_parser
 import logging
+import math
 import re
 import unicodedata
 
 from bs4 import BeautifulSoup
 from langdetect import LangDetectException, detect
+from dateutil import parser as date_parser
+import pluscodes as pc
 from rapidfuzz import fuzz
 from sqlalchemy.orm import Session
 
@@ -126,6 +128,11 @@ GENERIC_STOP_WORDS = {
     "september",
     "up",
     "to",
+}
+PLUS_CODE_REFERENCE_POINTS = {
+    "Sunny Beach": (42.6953, 27.7105),
+    "Obzor": (42.8198, 27.8800),
+    "Pomorie": (42.5584, 27.6439),
 }
 
 
@@ -546,6 +553,93 @@ def _extract_time_from_stop_field(bus_stop_field: str) -> str:
     if not match:
         return ""
     return f"{int(match.group(1)):02d}:{match.group(2)}"
+
+
+def _normalize_plus_code(code: str) -> str:
+    return (code or "").strip().upper().replace(" ", "")
+
+
+def _expand_plus_code(code: str, city_name: str) -> str:
+    normalized = _normalize_plus_code(code)
+    if "+" not in normalized:
+        return normalized
+    if len(normalized.split("+", 1)[0]) >= 8:
+        return normalized
+    reference_point = PLUS_CODE_REFERENCE_POINTS.get(city_name, PLUS_CODE_REFERENCE_POINTS["Sunny Beach"])
+    return pc.transformer.Transformer().lenghten(normalized, reference_point)
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius_km = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    return radius_km * 2 * math.asin(math.sqrt(a))
+
+
+def _resolve_plus_code(
+    db: Session,
+    detected_code: str,
+    city: City | None,
+) -> tuple[Hotel | None, BusStop | None, str, str]:
+    normalized_code = _normalize_plus_code(detected_code)
+    if not normalized_code:
+        return None, None, "", "plus_code_detected"
+
+    for hotel in db.query(Hotel).all():
+        if _normalize_plus_code(hotel.plus_code or "") == normalized_code:
+            return hotel, hotel.bus_stop, "", "plus_code_resolved"
+
+    city_name = city.name if city else "Sunny Beach"
+    try:
+        decoded = pc.decode(_expand_plus_code(normalized_code, city_name))
+        center = decoded.center()
+    except Exception:
+        return (
+            None,
+            None,
+            f"Customer provided a Google Maps Plus Code instead of hotel name. Please check the code {detected_code} and assign the correct bus stop manually.",
+            "plus_code_detected",
+        )
+
+    stop_query = db.query(BusStop)
+    if city:
+        stop_query = stop_query.filter(BusStop.city_id == city.id)
+    stops = stop_query.all() or db.query(BusStop).all()
+    if not stops:
+        return (
+            None,
+            None,
+            f"Customer provided a Google Maps Plus Code instead of hotel name. Please check the code {detected_code} and assign the correct bus stop manually.",
+            "plus_code_detected",
+        )
+
+    nearest_stop: BusStop | None = None
+    nearest_distance_km: float | None = None
+    for stop in stops:
+        distance_km = _haversine_km(center.lat, center.lon, stop.latitude, stop.longitude)
+        if nearest_distance_km is None or distance_km < nearest_distance_km:
+            nearest_stop = stop
+            nearest_distance_km = distance_km
+
+    if not nearest_stop or nearest_distance_km is None:
+        return (
+            None,
+            None,
+            f"Customer provided a Google Maps Plus Code instead of hotel name. Please check the code {detected_code} and assign the correct bus stop manually.",
+            "plus_code_detected",
+        )
+
+    warning_note = (
+        f"Plus Code {detected_code} resolved to nearest stop: "
+        f"{nearest_stop.name} ({nearest_distance_km * 1000:.0f}m away)"
+    )
+    return None, nearest_stop, warning_note, "plus_code_resolved"
 
 
 def _bus_stop_candidates(stop: BusStop) -> list[str]:
@@ -1125,14 +1219,16 @@ def classify_email(
     warning_parts = [booking.warning_note] if booking.warning_note else []
     extraction_source = booking.extraction_source
     if PLUS_CODE_PATTERN.fullmatch(normalized_raw_hotel):
-        hotel = None
-        matched_stop = None
-        score = 0.0
-        extraction_source = "plus_code_detected"
-        warning_parts.append(
-            f"Customer provided a Google Maps Plus Code instead of hotel name. Please check the code {booking.raw_hotel_extraction} and assign the correct bus stop manually."
+        hotel, matched_stop, plus_code_warning, plus_code_source = _resolve_plus_code(
+            db,
+            booking.raw_hotel_extraction,
+            city,
         )
-    if matched_stop:
+        score = 100.0 if (hotel or matched_stop) else 0.0
+        extraction_source = plus_code_source
+        if plus_code_warning:
+            warning_parts.append(plus_code_warning)
+    if matched_stop and extraction_source != "plus_code_resolved":
         hotel = None
         score = max(score, stop_score)
         extraction_source = "customer_selected_stop"

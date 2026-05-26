@@ -93,6 +93,7 @@ def _run_lightweight_migrations() -> None:
         },
         "hotels": {
             "city_id": "INTEGER",
+            "plus_code": "VARCHAR(32)",
         },
         "schedules": {
             "valid_days": "VARCHAR(32) NOT NULL DEFAULT ''",

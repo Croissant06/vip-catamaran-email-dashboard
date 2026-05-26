@@ -67,6 +67,7 @@ class Hotel(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     aliases: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    plus_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     bus_stop_id: Mapped[int | None] = mapped_column(ForeignKey("bus_stops.id"))
     city_id: Mapped[int | None] = mapped_column(ForeignKey("cities.id"))
 
