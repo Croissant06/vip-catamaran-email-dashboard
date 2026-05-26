@@ -30,7 +30,10 @@ window.addEventListener("pageshow", () => {
     }
 });
 
-hamburger?.addEventListener("click", openSidebar);
+hamburger?.addEventListener("click", () => {
+    console.log("hamburger clicked");
+    openSidebar();
+});
 backdrop?.addEventListener("click", closeSidebar);
 
 document.querySelectorAll("#sidebar a").forEach((a) => {
