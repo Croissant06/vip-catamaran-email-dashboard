@@ -2,20 +2,18 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
 
-from cruise_email_dashboard.database.db import get_db
-from cruise_email_dashboard.database.models import EmailLog, User
-from cruise_email_dashboard.dependencies import get_current_user
+from cruise_email_dashboard.database.db import SessionLocal
+from cruise_email_dashboard.database.models import EmailLog
 from cruise_email_dashboard.services.notifications import broker
 
 router = APIRouter(tags=["stream"])
 
 
 @router.get("/stream")
-async def stream(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+async def stream(request: Request):
     """Server-Sent Events endpoint for lightweight dashboard push updates.
 
     SSE works well here because the browser only needs one-way updates from the server:
@@ -27,10 +25,17 @@ async def stream(request: Request, db: Session = Depends(get_db), user: User = D
     queue from the broker to avoid leaking memory.
     """
 
+    def _unread_count() -> int:
+        db = SessionLocal()
+        try:
+            return db.query(EmailLog).filter(EmailLog.is_new.is_(True)).count()
+        finally:
+            db.close()
+
     async def event_generator():
         queue = await broker.subscribe()
         try:
-            unread_count = db.query(EmailLog).filter(EmailLog.is_new.is_(True)).count()
+            unread_count = _unread_count()
             yield f"event: unread_count\ndata: {{\"count\": {unread_count}}}\n\n"
             while True:
                 if await request.is_disconnected():
@@ -38,7 +43,7 @@ async def stream(request: Request, db: Session = Depends(get_db), user: User = D
                 try:
                     message = await asyncio.wait_for(queue.get(), timeout=15)
                     yield message
-                    unread_count = db.query(EmailLog).filter(EmailLog.is_new.is_(True)).count()
+                    unread_count = _unread_count()
                     yield f"event: unread_count\ndata: {{\"count\": {unread_count}}}\n\n"
                 except asyncio.TimeoutError:
                     yield ": keep-alive\n\n"

@@ -25,7 +25,15 @@ DEFAULT_DB_PATH = BASE_DIR / "app.db"
 DATABASE_URL = settings.database_url or f"sqlite:///{DEFAULT_DB_PATH.as_posix()}"
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, future=True, connect_args=connect_args)
+engine = create_engine(
+    DATABASE_URL,
+    future=True,
+    connect_args=connect_args,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=1800,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 Base = declarative_base()
 
