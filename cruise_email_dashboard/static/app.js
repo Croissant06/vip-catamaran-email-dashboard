@@ -25,6 +25,13 @@ if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener("click", openSidebar);
     sidebarClose?.addEventListener("click", closeSidebar);
     sidebarBackdrop?.addEventListener("click", closeSidebar);
+    document.querySelectorAll("#sidebar a").forEach((link) => {
+        link.addEventListener("click", () => {
+            if (window.innerWidth < 768) {
+                closeSidebar();
+            }
+        });
+    });
     window.addEventListener("resize", () => {
         if (window.innerWidth >= 768) {
             sidebarBackdrop?.classList.add("hidden");
