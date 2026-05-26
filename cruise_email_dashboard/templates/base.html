@@ -11,72 +11,72 @@
 <body class="overflow-x-hidden bg-gray-50 text-gray-900">
     {% if current_user %}
     <button
-        id="sidebarToggle"
+        id="hamburger"
         type="button"
-        class="fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-xl text-gray-700 shadow md:hidden"
+        class="fixed top-4 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-md bg-gray-800 p-2 text-xl text-white shadow md:hidden"
         aria-label="Open navigation"
     >
         ☰
     </button>
-    <div id="sidebarBackdrop" class="fixed inset-0 z-50 hidden bg-gray-950/50 md:hidden"></div>
-    <div class="min-h-screen md:flex">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-[60] flex w-72 max-w-[85vw] -translate-x-full bg-gray-900 text-white transition-transform duration-200 md:z-40 md:w-48 md:max-w-none md:translate-x-0 lg:w-56">
-            <div class="flex h-full w-full flex-col p-5">
-                <div class="mb-8 flex items-start justify-between gap-4">
-                    <div>
-                        <div class="text-2xl font-bold">VIP Catamaran</div>
-                        <p class="mt-1 text-sm text-gray-400">Pickup Email Operations</p>
-                    </div>
-                    <button
-                        id="sidebarClose"
-                        type="button"
-                        class="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-700 text-lg text-gray-300 md:hidden"
-                        aria-label="Close navigation"
-                    >
-                        ×
-                    </button>
-                </div>
-                <nav class="space-y-2 text-sm">
-                    <a href="/" class="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 {% if active_path == '/' %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">
-                        <span>Home</span>
-                    </a>
-                    <a href="/inbox" class="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 {% if active_path.startswith('/inbox') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">
-                        <span>Inbox</span>
-                        <span id="sidebarUnreadBadge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs text-white"></span>
-                    </a>
-                    <a href="/logs" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/logs') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">History &amp; Logs</a>
-                    <a href="/map" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/map') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Bus Stop Map</a>
-                    {% if current_user.role.value == 'admin' %}
-                    <a href="/admin" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path == '/admin' %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Admin Panel</a>
-                    <a href="/admin/create-demo-booking" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/admin/create-demo-booking') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Create Demo Booking</a>
-                    {% endif %}
-                </nav>
-                <div class="mt-auto rounded-xl bg-gray-800 p-4 text-sm">
-                    <div class="font-medium">{{ current_user.username }}</div>
-                    <div class="text-gray-400">{{ current_user.role.value }}</div>
-                    <a href="/logout" class="mt-3 inline-flex min-h-11 items-center text-indigo-300 hover:text-white">Log out</a>
-                </div>
+
+    <div
+        id="backdrop"
+        class="fixed inset-0 z-40 hidden bg-black bg-opacity-50 md:hidden"
+    ></div>
+
+    <div
+        id="sidebar"
+        class="fixed top-0 left-0 z-50 h-full w-48 -translate-x-full bg-gray-900 text-white transition-transform duration-300 md:w-48 md:translate-x-0 lg:w-56"
+    >
+        <div class="flex h-full w-full flex-col p-5">
+            <div class="mb-8">
+                <div class="text-2xl font-bold">VIP Catamaran</div>
+                <p class="mt-1 text-sm text-gray-400">Pickup Email Operations</p>
             </div>
-        </aside>
-        <div class="min-w-0 flex-1 md:ml-48 lg:ml-56">
-            {% if demo_mode %}
-            <div class="bg-blue-100 px-4 py-3 text-sm text-blue-800 md:px-8">
-                Demo Mode ON - all replies redirected to {{ demo_email or "the configured demo inbox" }}
+            <nav class="space-y-2 text-sm">
+                <a href="/" class="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 {% if active_path == '/' %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">
+                    <span>Home</span>
+                </a>
+                <a href="/inbox" class="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 {% if active_path.startswith('/inbox') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">
+                    <span>Inbox</span>
+                    <span id="sidebarUnreadBadge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs text-white"></span>
+                </a>
+                <a href="/logs" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/logs') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">History &amp; Logs</a>
+                <a href="/map" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/map') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Bus Stop Map</a>
+                {% if current_user.role.value == 'admin' %}
+                <a href="/admin" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path == '/admin' %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Admin Panel</a>
+                <a href="/admin/create-demo-booking" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/admin/create-demo-booking') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Create Demo Booking</a>
+                {% endif %}
+            </nav>
+            <div class="mt-auto rounded-xl bg-gray-800 p-4 text-sm">
+                <div class="font-medium">{{ current_user.username }}</div>
+                <div class="text-gray-400">{{ current_user.role.value }}</div>
+                <a href="/logout" class="mt-3 inline-flex min-h-11 items-center text-indigo-300 hover:text-white">Log out</a>
             </div>
-            {% endif %}
-            <header class="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
-                <div class="flex items-start justify-between gap-3 px-4 py-4 pl-16 md:px-8 md:pl-8">
-                    <div class="min-w-0">
-                        <h1 class="text-lg font-semibold sm:text-xl">{% block header_title %}Dashboard{% endblock %}</h1>
-                        <p class="text-sm text-gray-500">{% block header_subtitle %}VIP Catamaran operations{% endblock %}</p>
-                    </div>
-                    <div class="hidden text-sm text-gray-500 lg:block">Live inbox monitoring</div>
-                </div>
-            </header>
-            <main class="px-4 py-6 text-xs md:px-8 md:text-sm">
-                {% block content %}{% endblock %}
-            </main>
         </div>
+    </div>
+
+    <div
+        id="main-content"
+        class="min-h-screen bg-gray-50 md:ml-48 lg:ml-56"
+    >
+        {% if demo_mode %}
+        <div class="bg-blue-100 px-4 py-3 text-sm text-blue-800 md:px-8">
+            Demo Mode ON - all replies redirected to {{ demo_email or "the configured demo inbox" }}
+        </div>
+        {% endif %}
+        <header class="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
+            <div class="flex items-start justify-between gap-3 px-4 py-4 pl-16 md:px-8 md:pl-8">
+                <div class="min-w-0">
+                    <h1 class="text-lg font-semibold sm:text-xl">{% block header_title %}Dashboard{% endblock %}</h1>
+                    <p class="text-sm text-gray-500">{% block header_subtitle %}VIP Catamaran operations{% endblock %}</p>
+                </div>
+                <div class="hidden text-sm text-gray-500 lg:block">Live inbox monitoring</div>
+            </div>
+        </header>
+        <main class="px-4 py-6 text-xs md:px-8 md:text-sm">
+            {% block content %}{% endblock %}
+        </main>
     </div>
     {% else %}
     {% block auth_content %}{% endblock %}

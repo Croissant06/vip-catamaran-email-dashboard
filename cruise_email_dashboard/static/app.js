@@ -1,55 +1,45 @@
-const sidebarToggle = document.getElementById("sidebarToggle");
 const sidebar = document.getElementById("sidebar");
-const sidebarBackdrop = document.getElementById("sidebarBackdrop");
-const sidebarClose = document.getElementById("sidebarClose");
+const backdrop = document.getElementById("backdrop");
+const hamburger = document.getElementById("hamburger");
 
 function openSidebar() {
-    if (!sidebar) {
-        return;
-    }
-    sidebar.classList.remove("-translate-x-full");
-    sidebarBackdrop?.classList.remove("hidden");
-    document.body.classList.add("overflow-hidden");
+    sidebar?.classList.remove("-translate-x-full");
+    backdrop?.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
 }
 
 function closeSidebar() {
-    if (!sidebar) {
-        return;
-    }
-    sidebar.classList.add("-translate-x-full");
-    sidebarBackdrop?.classList.add("hidden");
-    document.body.classList.remove("overflow-hidden");
+    sidebar?.classList.add("-translate-x-full");
+    backdrop?.classList.add("hidden");
+    document.body.style.overflow = "";
 }
 
-function syncSidebarState() {
-    if (!sidebar) {
-        return;
-    }
+if (window.innerWidth < 768) {
+    closeSidebar();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
     if (window.innerWidth < 768) {
         closeSidebar();
-        return;
     }
-    sidebar.classList.remove("-translate-x-full");
-    sidebarBackdrop?.classList.add("hidden");
-    document.body.classList.remove("overflow-hidden");
-}
+});
 
-if (sidebarToggle && sidebar) {
-    sidebarToggle.addEventListener("click", openSidebar);
-    sidebarClose?.addEventListener("click", closeSidebar);
-    sidebarBackdrop?.addEventListener("click", closeSidebar);
-    document.querySelectorAll("#sidebar a").forEach((link) => {
-        link.addEventListener("click", () => {
-            if (window.innerWidth < 768) {
-                closeSidebar();
-            }
-        });
+window.addEventListener("pageshow", () => {
+    if (window.innerWidth < 768) {
+        closeSidebar();
+    }
+});
+
+hamburger?.addEventListener("click", openSidebar);
+backdrop?.addEventListener("click", closeSidebar);
+
+document.querySelectorAll("#sidebar a").forEach((a) => {
+    a.addEventListener("click", () => {
+        if (window.innerWidth < 768) {
+            closeSidebar();
+        }
     });
-    window.addEventListener("DOMContentLoaded", syncSidebarState);
-    window.addEventListener("pageshow", syncSidebarState);
-    window.addEventListener("resize", syncSidebarState);
-    syncSidebarState();
-}
+});
 
 function updateUnreadBadge(count) {
     const badge = document.getElementById("sidebarUnreadBadge");
