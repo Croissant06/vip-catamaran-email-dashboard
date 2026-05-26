@@ -21,6 +21,19 @@ function closeSidebar() {
     document.body.classList.remove("overflow-hidden");
 }
 
+function syncSidebarState() {
+    if (!sidebar) {
+        return;
+    }
+    if (window.innerWidth < 768) {
+        closeSidebar();
+        return;
+    }
+    sidebar.classList.remove("-translate-x-full");
+    sidebarBackdrop?.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+}
+
 if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener("click", openSidebar);
     sidebarClose?.addEventListener("click", closeSidebar);
@@ -32,12 +45,10 @@ if (sidebarToggle && sidebar) {
             }
         });
     });
-    window.addEventListener("resize", () => {
-        if (window.innerWidth >= 768) {
-            sidebarBackdrop?.classList.add("hidden");
-            document.body.classList.remove("overflow-hidden");
-        }
-    });
+    window.addEventListener("DOMContentLoaded", syncSidebarState);
+    window.addEventListener("pageshow", syncSidebarState);
+    window.addEventListener("resize", syncSidebarState);
+    syncSidebarState();
 }
 
 function updateUnreadBadge(count) {

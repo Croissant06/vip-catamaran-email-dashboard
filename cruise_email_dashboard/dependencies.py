@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import timezone
-
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -29,7 +27,6 @@ def template_context(request: Request, user: User | None = None, **kwargs):
         "request": request,
         "current_user": user,
         "active_path": request.url.path,
-        "timezone": timezone.utc,
         "demo_mode": settings.demo_mode,
         "demo_email": settings.demo_email,
         **kwargs,
