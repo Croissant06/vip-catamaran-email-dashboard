@@ -8,6 +8,9 @@
             <h2 class="text-lg font-semibold break-words">{{ email.subject }}</h2>
             {% include "_status_badge.html" %}
         </div>
+        <div id="mobilePresenceBar" class="mb-4 hidden rounded-xl border border-slate-200 bg-slate-50 p-3 md:hidden">
+            <div id="mobilePresenceUsers" class="flex flex-wrap items-center gap-1"></div>
+        </div>
         <div class="space-y-2 text-sm text-gray-600">
             <div><span class="font-medium text-gray-800">From:</span> {{ email.sender_name }} &lt;{{ email.sender_email }}&gt;</div>
             <div><span class="font-medium text-gray-800">Received:</span> {{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</div>
@@ -62,6 +65,10 @@
                 {{ email.warning_note }}
             </div>
             {% endif %}
+            <div id="desktopPresenceBar" class="mb-4 hidden items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 md:flex">
+                <span class="font-medium text-slate-800">Also viewing:</span>
+                <div id="desktopPresenceUsers" class="flex flex-wrap items-center gap-1"></div>
+            </div>
             {% if email.booking_type == "UNKNOWN" %}
             <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
                 Booking type could not be determined - please assign manually before sending reply.
@@ -70,7 +77,7 @@
             <form method="post" action="/inbox/{{ email.id }}/reassign" class="space-y-4">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Detected hotel</label>
-                    <select name="detected_hotel_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="detectedHotelSelect" name="detected_hotel_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         {% for hotel in hotels %}
                         <option value="{{ hotel.id }}" {% if email.detected_hotel and hotel.id == email.detected_hotel.id %}selected{% endif %}>{{ hotel.name }}</option>
                         {% endfor %}
@@ -78,11 +85,17 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Assigned bus stop</label>
-                    <select name="assigned_bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="assignedBusStopSelect" name="assigned_bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         {% for stop in stops %}
                         <option value="{{ stop.id }}" {% if email.assigned_bus_stop and stop.id == email.assigned_bus_stop.id %}selected{% endif %}>{{ stop.name }}</option>
                         {% endfor %}
                     </select>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-sm text-gray-500">
+                        Changing the hotel will auto-select its default bus stop. You can still override it if needed.
+                    </p>
+                    <p id="busStopAutoUpdateMessage" class="hidden rounded-md px-3 py-2 text-sm"></p>
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Draft reply</label>
@@ -183,4 +196,191 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+const hotelStopDefaults = {
+    {% for hotel in hotels %}
+    "{{ hotel.id }}": {{ hotel.bus_stop_id if hotel.bus_stop_id else "null" }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+};
+
+const reassignForm = document.querySelector('form[action="/inbox/{{ email.id }}/reassign"]');
+const hotelSelect = document.getElementById("detectedHotelSelect");
+const stopSelect = document.getElementById("assignedBusStopSelect");
+const helperMessage = document.getElementById("busStopAutoUpdateMessage");
+const presenceEmailId = {{ email.id }};
+const desktopPresenceBar = document.getElementById("desktopPresenceBar");
+const desktopPresenceUsers = document.getElementById("desktopPresenceUsers");
+const mobilePresenceBar = document.getElementById("mobilePresenceBar");
+const mobilePresenceUsers = document.getElementById("mobilePresenceUsers");
+let presenceIntervalId = null;
+let currentPresenceUsers = [];
+
+function defaultStopForHotel(hotelId) {
+    return hotelStopDefaults[String(hotelId)] ?? null;
+}
+
+function showAutoUpdateMessage() {
+    if (!helperMessage) {
+        return;
+    }
+    helperMessage.className = "rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-700";
+    helperMessage.textContent = "Assigned bus stop updated from selected hotel";
+    helperMessage.classList.remove("hidden");
+}
+
+function showMissingDefaultStopMessage() {
+    if (!helperMessage) {
+        return;
+    }
+    helperMessage.className = "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700";
+    helperMessage.textContent = "This hotel has no default bus stop assigned. Please select one manually.";
+    helperMessage.classList.remove("hidden");
+}
+
+function presenceSessionId() {
+    const storageKey = "presenceSessionId";
+    let sessionId = window.sessionStorage.getItem(storageKey);
+    if (!sessionId) {
+        sessionId = window.crypto?.randomUUID?.() ?? `presence-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        window.sessionStorage.setItem(storageKey, sessionId);
+    }
+    return sessionId;
+}
+
+function presenceAvatar(user, sizeClass) {
+    return `
+        <div class="relative flex h-11 w-11 items-center justify-center" title="${user.username}">
+            <span class="flex ${sizeClass} items-center justify-center rounded-full ${user.color} font-semibold text-white shadow-sm">
+                ${user.initial}
+            </span>
+        </div>
+    `;
+}
+
+function syncPresenceBarVisibility() {
+    if (!desktopPresenceBar || !mobilePresenceBar) {
+        return;
+    }
+    const hasUsers = currentPresenceUsers.length > 0;
+    desktopPresenceBar.style.display = hasUsers && window.innerWidth >= 768 ? "flex" : "none";
+    mobilePresenceBar.style.display = hasUsers && window.innerWidth < 768 ? "block" : "none";
+}
+
+function renderPresenceBars(users) {
+    if (!desktopPresenceBar || !desktopPresenceUsers || !mobilePresenceBar || !mobilePresenceUsers) {
+        return;
+    }
+    currentPresenceUsers = users;
+    if (!users.length) {
+        desktopPresenceUsers.innerHTML = "";
+        mobilePresenceUsers.innerHTML = "";
+        syncPresenceBarVisibility();
+        return;
+    }
+    desktopPresenceUsers.innerHTML = users.map((user) => presenceAvatar(user, "h-6 w-6 text-xs")).join("");
+    mobilePresenceUsers.innerHTML = users.map((user) => presenceAvatar(user, "h-5 w-5 text-[10px]")).join("");
+    syncPresenceBarVisibility();
+}
+
+async function sendPresenceHeartbeat() {
+    try {
+        await fetch("/presence/heartbeat", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({
+                email_log_id: presenceEmailId,
+                session_id: presenceSessionId(),
+            }),
+        });
+    } catch (error) {
+        console.error("Failed to send presence heartbeat", error);
+    }
+}
+
+async function refreshActivePresence() {
+    try {
+        const response = await fetch(`/presence/active/${presenceEmailId}`, {
+            credentials: "same-origin",
+            headers: { "Accept": "application/json" },
+        });
+        if (!response.ok) {
+            return;
+        }
+        renderPresenceBars(await response.json());
+    } catch (error) {
+        console.error("Failed to refresh active presence", error);
+    }
+}
+
+async function heartbeatTick() {
+    await sendPresenceHeartbeat();
+    await refreshActivePresence();
+}
+
+function startHeartbeat() {
+    if (presenceIntervalId || document.hidden) {
+        return;
+    }
+    heartbeatTick();
+    presenceIntervalId = window.setInterval(heartbeatTick, 30000);
+}
+
+function stopHeartbeat() {
+    if (!presenceIntervalId) {
+        return;
+    }
+    window.clearInterval(presenceIntervalId);
+    presenceIntervalId = null;
+}
+
+hotelSelect?.addEventListener("change", () => {
+    const defaultStopId = defaultStopForHotel(hotelSelect.value);
+    if (!stopSelect) {
+        return;
+    }
+    if (!defaultStopId) {
+        showMissingDefaultStopMessage();
+        return;
+    }
+    stopSelect.value = String(defaultStopId);
+    showAutoUpdateMessage();
+});
+
+reassignForm?.addEventListener("submit", (event) => {
+    if (!hotelSelect || !stopSelect) {
+        return;
+    }
+    const defaultStopId = defaultStopForHotel(hotelSelect.value);
+    if (!defaultStopId) {
+        return;
+    }
+    if (String(stopSelect.value) !== String(defaultStopId)) {
+        const confirmed = window.confirm(
+            "The selected bus stop does not match this hotel's default stop. Continue anyway?"
+        );
+        if (!confirmed) {
+            event.preventDefault();
+        }
+    }
+});
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopHeartbeat();
+    } else {
+        startHeartbeat();
+    }
+});
+
+window.addEventListener("beforeunload", stopHeartbeat);
+window.addEventListener("resize", syncPresenceBarVisibility);
+startHeartbeat();
+</script>
 {% endblock %}

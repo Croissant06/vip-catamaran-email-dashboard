@@ -134,9 +134,20 @@ def _run_reference_data_fixes() -> None:
     parsing accuracy as new customer wording is discovered in live mailbox traffic.
     """
 
-    from cruise_email_dashboard.database.models import BusStop, City, Hotel
+    from cruise_email_dashboard.database.models import BusStop, City, Hotel, User, UserRole
+    from cruise_email_dashboard.services.auth import hash_password
 
     with session_scope() as db:
+        staff_users = (
+            ("tickets", "Vessy@02", UserRole.staff),
+            ("bookings", "Olga@02", UserRole.staff),
+            ("info", "Teddy@02", UserRole.staff),
+        )
+        existing_users = {user.username for user in db.query(User).filter(User.username.in_([item[0] for item in staff_users])).all()}
+        for username, password, role in staff_users:
+            if username not in existing_users:
+                db.add(User(username=username, hashed_password=hash_password(password), role=role))
+
         sunny_beach = db.query(City).filter(City.name == "Sunny Beach").first()
         if not sunny_beach:
             return

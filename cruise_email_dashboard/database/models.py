@@ -129,6 +129,11 @@ class EmailLog(Base):
 
     detected_hotel: Mapped["Hotel | None"] = relationship("Hotel", back_populates="emails")
     assigned_bus_stop: Mapped["BusStop | None"] = relationship("BusStop", back_populates="emails")
+    presence_entries: Mapped[list["UserPresence"]] = relationship(
+        "UserPresence",
+        back_populates="email_log",
+        cascade="all, delete-orphan",
+    )
 
 
 class User(Base):
@@ -139,3 +144,21 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(SqlEnum(UserRole), default=UserRole.staff, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    presence_entries: Mapped[list["UserPresence"]] = relationship(
+        "UserPresence",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class UserPresence(Base):
+    __tablename__ = "user_presence"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    email_log_id: Mapped[int] = mapped_column(ForeignKey("emails_log.id"), nullable=False)
+    last_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    session_id: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    user: Mapped["User"] = relationship("User", back_populates="presence_entries")
+    email_log: Mapped["EmailLog"] = relationship("EmailLog", back_populates="presence_entries")

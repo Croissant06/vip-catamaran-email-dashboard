@@ -2,24 +2,43 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from contextlib import suppress
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from cruise_email_dashboard.database.db import SessionLocal, init_db
-from cruise_email_dashboard.routers import admin, analytics, auth, inbox, logs, map as map_router, stream
+from cruise_email_dashboard.routers import admin, analytics, auth, inbox, logs, map as map_router, presence, stream
+from cruise_email_dashboard.services.presence import cleanup_stale_presence, scheduled_cleanup_cutoff
 from cruise_email_dashboard.services.email_poller import poll_forever
 from cruise_email_dashboard.settings import settings
+
+
+def cleanup_presence_job() -> None:
+    db = SessionLocal()
+    try:
+        cleanup_stale_presence(db, older_than=scheduled_cleanup_cutoff())
+    finally:
+        db.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(cleanup_presence_job, "interval", minutes=5, id="presence_cleanup", replace_existing=True)
+    scheduler.start()
     poller = asyncio.create_task(poll_forever(SessionLocal))
-    yield
-    poller.cancel()
+    try:
+        yield
+    finally:
+        poller.cancel()
+        with suppress(asyncio.CancelledError):
+            await poller
+        scheduler.shutdown(wait=False)
 
 
 app = FastAPI(title="Cruise Email Dashboard", lifespan=lifespan)
@@ -32,6 +51,7 @@ app.include_router(inbox.router)
 app.include_router(logs.router)
 app.include_router(map_router.router)
 app.include_router(admin.router)
+app.include_router(presence.router)
 app.include_router(stream.router)
 
 

@@ -69,10 +69,96 @@
                 <td class="hidden px-4 py-3 md:table-cell" title="{{ email.detected_hotel.name if email.detected_hotel else 'Not matched' }}">{{ email.detected_hotel.name if email.detected_hotel else "Not matched" }}</td>
                 <td class="hidden px-4 py-3 lg:table-cell">{{ email.assigned_bus_stop.name if email.assigned_bus_stop else "Not assigned" }}</td>
                 <td class="hidden px-4 py-3 lg:table-cell">{{ email.pickup_time_text or "N/A" }}</td>
-                <td class="px-4 py-3">{% include "_status_badge.html" %}</td>
+                <td class="px-4 py-3">
+                    <div class="flex flex-col gap-2">
+                        {% include "_status_badge.html" %}
+                        <div
+                            class="flex min-h-11 items-center"
+                            data-presence-email-id="{{ email.id }}"
+                            aria-label="Active viewers"
+                        ></div>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+const inboxPresenceContainers = Array.from(document.querySelectorAll("[data-presence-email-id]"));
+let inboxPresenceCache = {};
+let inboxPresenceIntervalId = null;
+
+function inboxPresenceConfig() {
+    if (window.innerWidth < 768) {
+        return { maxVisible: 1, sizeClass: "h-5 w-5 text-[10px]" };
+    }
+    if (window.innerWidth < 1024) {
+        return { maxVisible: 2, sizeClass: "h-[22px] w-[22px] text-[11px]" };
+    }
+    return { maxVisible: 3, sizeClass: "h-6 w-6 text-xs" };
+}
+
+function renderInboxPresenceUsers(users) {
+    if (!users.length) {
+        return "";
+    }
+    const { maxVisible, sizeClass } = inboxPresenceConfig();
+    const visibleUsers = users.slice(0, maxVisible);
+    const overflowCount = users.length - visibleUsers.length;
+    const avatars = visibleUsers.map((user) => `
+        <div class="relative flex h-11 w-11 items-center justify-center" title="${user.username}">
+            <span class="flex ${sizeClass} items-center justify-center rounded-full ${user.color} font-semibold text-white shadow-sm">
+                ${user.initial}
+            </span>
+        </div>
+    `).join("");
+    const overflow = overflowCount > 0 ? `
+        <div class="relative flex h-11 w-11 items-center justify-center" title="${overflowCount} more viewer(s)">
+            <span class="flex ${sizeClass} items-center justify-center rounded-full bg-gray-200 font-semibold text-gray-700 shadow-sm">
+                +${overflowCount}
+            </span>
+        </div>
+    ` : "";
+    return `<div class="flex items-center -space-x-3">${avatars}${overflow}</div>`;
+}
+
+function applyInboxPresenceData() {
+    inboxPresenceContainers.forEach((container) => {
+        const emailId = container.dataset.presenceEmailId;
+        const users = inboxPresenceCache[emailId] || [];
+        container.innerHTML = renderInboxPresenceUsers(users);
+    });
+}
+
+async function refreshInboxPresence() {
+    const ids = inboxPresenceContainers.map((container) => container.dataset.presenceEmailId).filter(Boolean);
+    if (!ids.length) {
+        return;
+    }
+    try {
+        const response = await fetch(`/presence/batch?ids=${ids.join(",")}`, {
+            credentials: "same-origin",
+            headers: { "Accept": "application/json" },
+        });
+        if (!response.ok) {
+            return;
+        }
+        inboxPresenceCache = await response.json();
+        applyInboxPresenceData();
+    } catch (error) {
+        console.error("Failed to refresh inbox presence", error);
+    }
+}
+
+window.addEventListener("resize", applyInboxPresenceData);
+
+if (inboxPresenceContainers.length) {
+    refreshInboxPresence();
+    inboxPresenceIntervalId = window.setInterval(refreshInboxPresence, 30000);
+}
+</script>
 {% endblock %}
