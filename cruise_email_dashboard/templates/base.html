@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
-<body class="flex min-h-screen overflow-x-hidden bg-gray-50 text-gray-900">
+<body class="{% if current_user %}flex overflow-x-hidden{% endif %} min-h-screen bg-gray-50 text-gray-900">
     {% if current_user %}
     <button
         id="hamburger"
@@ -79,7 +79,9 @@
         </main>
     </div>
     {% else %}
-    {% block auth_content %}{% endblock %}
+    <div class="min-h-screen w-full">
+        {% block auth_content %}{% endblock %}
+    </div>
     {% endif %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/static/app.js"></script>

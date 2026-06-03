@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
 {% block auth_content %}
-<div class="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-    <div class="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+<div class="grid min-h-screen w-full place-items-center bg-gray-100 px-4 py-6 sm:px-6">
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         <div class="mb-6 text-center">
             <h1 class="text-3xl font-bold text-gray-900">VIP Catamaran</h1>
             <p class="mt-2 text-sm text-gray-500">Pickup response dashboard</p>
@@ -13,13 +13,13 @@
         <form method="post" action="/login" class="space-y-4">
             <div>
                 <label class="mb-1 block text-sm font-medium text-gray-700">Username</label>
-                <input type="text" name="username" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input type="text" name="username" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
             </div>
             <div>
                 <label class="mb-1 block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" name="password" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <input type="password" name="password" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
             </div>
-            <button type="submit" class="w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Login</button>
+            <button type="submit" class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Login</button>
         </form>
     </div>
 </div>
