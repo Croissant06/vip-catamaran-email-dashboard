@@ -11,13 +11,16 @@ jobs:
 
     steps:
       - name: Deploy over SSH
+        env:
+          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/vm_key
+          printf '%s' "$SSH_KEY" > ~/.ssh/vm_key
           chmod 600 ~/.ssh/vm_key
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
-
-          ssh -i ~/.ssh/vm_key "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" << 'EOF'
+          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/vm_key "$VM_USER@$VM_HOST" << 'EOF'
             set -e
             cd /opt/vip-catamaran
             git pull --ff-only origin main
