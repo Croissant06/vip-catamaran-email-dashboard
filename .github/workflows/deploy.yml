@@ -7,25 +7,40 @@ on:
 
 jobs:
   deploy:
+    name: Deploy app
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy over SSH
-        env:
-          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USER: ${{ secrets.VM_USER }}
+      - name: Prepare SSH key
         run: |
+          set -e
+
           mkdir -p ~/.ssh
-          printf '%s' "$SSH_KEY" > ~/.ssh/vm_key
+
+          printf '%s' "${{ secrets.VM_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/vm_key
           chmod 600 ~/.ssh/vm_key
-          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/vm_key "$VM_USER@$VM_HOST" << 'EOF'
+
+          ssh-keygen -y -f ~/.ssh/vm_key > /dev/null
+
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy on server
+        run: |
+          set -e
+
+          ssh -i ~/.ssh/vm_key -o IdentitiesOnly=yes "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" << 'EOF'
             set -e
+
             cd /opt/vip-catamaran
+
             git pull --ff-only origin main
-            source venv/bin/activate
+
+            if [ -d ".venv" ]; then
+              source .venv/bin/activate
+            fi
+
             pip install -r requirements.txt
-            sudo systemctl restart vip-catamaran
-            sudo systemctl status vip-catamaran --no-pager
+
+            sudo -n systemctl restart vip-catamaran
+            sudo -n systemctl status vip-catamaran --no-pager
           EOF
