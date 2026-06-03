@@ -1,0 +1,28 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy over SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/vm_key
+          chmod 600 ~/.ssh/vm_key
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/vm_key "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" << 'EOF'
+            set -e
+            cd /opt/vip-catamaran
+            git pull --ff-only origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart vip-catamaran
+            sudo systemctl status vip-catamaran --no-pager
+          EOF
