@@ -35,11 +35,12 @@ jobs:
 
             git pull --ff-only origin main
 
-            if [ -d ".venv" ]; then
-              source .venv/bin/activate
+            if [ ! -d ".venv" ]; then
+              python3 -m venv .venv
             fi
 
-            pip install -r requirements.txt
+            .venv/bin/python -m pip install --upgrade pip
+            .venv/bin/python -m pip install -r requirements.txt
 
             sudo -n systemctl restart vip-catamaran
             sudo -n systemctl status vip-catamaran --no-pager
