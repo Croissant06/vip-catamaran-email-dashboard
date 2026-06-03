@@ -18,6 +18,9 @@ class NotificationBroker:
         self._listeners.discard(queue)
 
     async def publish(self, event: str, data: dict[str, Any]) -> None:
+        self.publish_nowait(event, data)
+
+    def publish_nowait(self, event: str, data: dict[str, Any]) -> None:
         payload = f"event: {event}\ndata: {json.dumps(data)}\n\n"
         stale: list[asyncio.Queue[str]] = []
         for listener in self._listeners:

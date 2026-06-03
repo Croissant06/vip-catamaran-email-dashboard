@@ -217,6 +217,7 @@ const mobilePresenceBar = document.getElementById("mobilePresenceBar");
 const mobilePresenceUsers = document.getElementById("mobilePresenceUsers");
 let presenceIntervalId = null;
 let currentPresenceUsers = [];
+let presenceLeaving = false;
 
 function defaultStopForHotel(hotelId) {
     return hotelStopDefaults[String(hotelId)] ?? null;
@@ -304,6 +305,32 @@ async function sendPresenceHeartbeat() {
     }
 }
 
+function notifyPresenceLeave() {
+    if (presenceLeaving) {
+        return;
+    }
+    presenceLeaving = true;
+    const payload = JSON.stringify({
+        email_log_id: presenceEmailId,
+        session_id: presenceSessionId(),
+    });
+    if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon("/presence/leave", blob);
+        return;
+    }
+    fetch("/presence/leave", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        body: payload,
+        keepalive: true,
+    }).catch(() => {});
+}
+
 async function refreshActivePresence() {
     try {
         const response = await fetch(`/presence/active/${presenceEmailId}`, {
@@ -372,14 +399,32 @@ reassignForm?.addEventListener("submit", (event) => {
 });
 
 document.addEventListener("visibilitychange", () => {
+    const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
+    if (!isMobileViewport) {
+        return;
+    }
     if (document.hidden) {
         stopHeartbeat();
     } else {
+        presenceLeaving = false;
         startHeartbeat();
     }
 });
 
-window.addEventListener("beforeunload", stopHeartbeat);
+document.addEventListener("dashboard:presence-changed", (event) => {
+    if (Number(event.detail?.email_id) === presenceEmailId) {
+        refreshActivePresence();
+    }
+});
+
+window.addEventListener("beforeunload", () => {
+    stopHeartbeat();
+    notifyPresenceLeave();
+});
+window.addEventListener("pagehide", () => {
+    stopHeartbeat();
+    notifyPresenceLeave();
+});
 window.addEventListener("resize", syncPresenceBarVisibility);
 startHeartbeat();
 </script>

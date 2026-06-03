@@ -30,12 +30,16 @@ def scheduled_cleanup_cutoff() -> datetime:
     return utc_now_naive() - timedelta(seconds=SCHEDULED_CLEANUP_SECONDS)
 
 
-def cleanup_stale_presence(db: Session, *, older_than: datetime) -> int:
-    stale_rows = db.query(UserPresence).filter(UserPresence.last_seen < older_than)
-    count = stale_rows.count()
-    stale_rows.delete(synchronize_session=False)
+def cleanup_stale_presence(db: Session, *, older_than: datetime) -> list[int]:
+    stale_email_ids = [
+        email_id
+        for (email_id,) in db.query(UserPresence.email_log_id).filter(UserPresence.last_seen < older_than).distinct().all()
+    ]
+    if not stale_email_ids:
+        return []
+    db.query(UserPresence).filter(UserPresence.last_seen < older_than).delete(synchronize_session=False)
     db.commit()
-    return count
+    return stale_email_ids
 
 
 def _presence_color(user: User) -> str:

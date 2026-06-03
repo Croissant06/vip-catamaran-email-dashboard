@@ -155,10 +155,24 @@ async function refreshInboxPresence() {
 }
 
 window.addEventListener("resize", applyInboxPresenceData);
+document.addEventListener("dashboard:presence-changed", (event) => {
+    const emailId = String(event.detail?.email_id || "");
+    if (!emailId || !inboxPresenceContainers.some((container) => container.dataset.presenceEmailId === emailId)) {
+        return;
+    }
+    refreshInboxPresence();
+});
 
 if (inboxPresenceContainers.length) {
     refreshInboxPresence();
-    inboxPresenceIntervalId = window.setInterval(refreshInboxPresence, 30000);
+    inboxPresenceIntervalId = window.setInterval(refreshInboxPresence, 60000);
 }
+
+window.addEventListener("pagehide", () => {
+    if (inboxPresenceIntervalId) {
+        window.clearInterval(inboxPresenceIntervalId);
+        inboxPresenceIntervalId = null;
+    }
+});
 </script>
 {% endblock %}

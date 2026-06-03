@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from cruise_email_dashboard.database.db import get_db
 from cruise_email_dashboard.database.models import EmailLog, User, UserPresence
 from cruise_email_dashboard.dependencies import get_current_user
+from cruise_email_dashboard.services.notifications import broker
 from cruise_email_dashboard.services.presence import (
     ACTIVE_WINDOW_SECONDS,
     active_cutoff,
@@ -23,6 +24,11 @@ class HeartbeatPayload(BaseModel):
     session_id: str
 
 
+class LeavePayload(BaseModel):
+    email_log_id: int
+    session_id: str
+
+
 @router.post("/heartbeat")
 def heartbeat(
     payload: HeartbeatPayload,
@@ -30,7 +36,12 @@ def heartbeat(
     user: User = Depends(get_current_user),
 ):
     cutoff = active_cutoff()
-    db.query(UserPresence).filter(UserPresence.last_seen < cutoff).delete(synchronize_session=False)
+    stale_email_ids = [
+        email_id
+        for (email_id,) in db.query(UserPresence.email_log_id).filter(UserPresence.last_seen < cutoff).distinct().all()
+    ]
+    if stale_email_ids:
+        db.query(UserPresence).filter(UserPresence.last_seen < cutoff).delete(synchronize_session=False)
 
     email = db.query(EmailLog.id).filter(EmailLog.id == payload.email_log_id).first()
     if not email:
@@ -42,10 +53,13 @@ def heartbeat(
         .filter(UserPresence.user_id == user.id, UserPresence.session_id == payload.session_id)
         .first()
     )
+    should_publish = False
     if row:
+        should_publish = row.email_log_id != payload.email_log_id or row.last_seen < cutoff
         row.email_log_id = payload.email_log_id
         row.last_seen = utc_now_naive()
     else:
+        should_publish = True
         db.add(
             UserPresence(
                 user_id=user.id,
@@ -56,7 +70,29 @@ def heartbeat(
         )
 
     db.commit()
+    for stale_email_id in stale_email_ids:
+        if stale_email_id != payload.email_log_id:
+            broker.publish_nowait("presence_changed", {"email_id": stale_email_id})
+    if should_publish:
+        broker.publish_nowait("presence_changed", {"email_id": payload.email_log_id})
     return {"ok": True, "active_window_seconds": ACTIVE_WINDOW_SECONDS}
+
+
+@router.post("/leave")
+def leave(
+    payload: LeavePayload,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    deleted = (
+        db.query(UserPresence)
+        .filter(UserPresence.user_id == user.id, UserPresence.session_id == payload.session_id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    if deleted:
+        broker.publish_nowait("presence_changed", {"email_id": payload.email_log_id})
+    return {"ok": True}
 
 
 @router.get("/active/{email_log_id}")

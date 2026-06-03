@@ -12,15 +12,18 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from cruise_email_dashboard.database.db import SessionLocal, init_db
 from cruise_email_dashboard.routers import admin, analytics, auth, inbox, logs, map as map_router, presence, stream
-from cruise_email_dashboard.services.presence import cleanup_stale_presence, scheduled_cleanup_cutoff
 from cruise_email_dashboard.services.email_poller import poll_forever
+from cruise_email_dashboard.services.notifications import broker
+from cruise_email_dashboard.services.presence import cleanup_stale_presence, scheduled_cleanup_cutoff
 from cruise_email_dashboard.settings import settings
 
 
 def cleanup_presence_job() -> None:
     db = SessionLocal()
     try:
-        cleanup_stale_presence(db, older_than=scheduled_cleanup_cutoff())
+        stale_email_ids = cleanup_stale_presence(db, older_than=scheduled_cleanup_cutoff())
+        for email_id in stale_email_ids:
+            broker.publish_nowait("presence_changed", {"email_id": email_id})
     finally:
         db.close()
 
