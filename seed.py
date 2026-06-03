@@ -163,8 +163,8 @@ def seed() -> None:
             db.add(Schedule(bus_stop_id=stop.id, pickup_time=time.fromisoformat(pickup), season_label="tuesday_friday_morning", valid_days="1,4"))
             db.add(Hotel(name=hotel_name, aliases=aliases, bus_stop_id=stop.id, city_id=pomorie.id))
 
-        if not db.query(User).filter(User.username == "admin").first():
-            db.add(User(username="admin", hashed_password=hash_password("admin123"), role=UserRole.admin))
+        if not db.query(User).filter(User.username == "presadmin").first():
+            db.add(User(username="presadmin", hashed_password=hash_password("presko06"), role=UserRole.admin))
         if not db.query(User).filter(User.username == "staff").first():
             db.add(User(username="staff", hashed_password=hash_password("staff123"), role=UserRole.staff))
         db.flush()
@@ -294,7 +294,7 @@ def seed() -> None:
             regenerate_email_draft(email)
             db.add(email)
 
-    print("Seed complete. Demo users: admin/admin123 and staff/staff123")
+    print("Seed complete. Demo users: presadmin/presko06 and staff/staff123")
 
 
 if __name__ == "__main__":
