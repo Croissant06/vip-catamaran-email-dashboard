@@ -166,7 +166,7 @@ def seed() -> None:
         if not db.query(User).filter(User.username == "presadmin").first():
             db.add(User(username="presadmin", hashed_password=hash_password("presko06"), role=UserRole.admin))
         if not db.query(User).filter(User.username == "staff").first():
-            db.add(User(username="staff", hashed_password=hash_password("staff123"), role=UserRole.staff))
+            db.add(User(username="staff", hashed_password=hash_password("vipcatastaff123"), role=UserRole.staff))
         db.flush()
 
         emails = [
@@ -294,7 +294,7 @@ def seed() -> None:
             regenerate_email_draft(email)
             db.add(email)
 
-    print("Seed complete. Demo users: presadmin/presko06 and staff/staff123")
+    print("Seed complete. Demo users: presadmin/presko06 and staff/vipcatastaff123")
 
 
 if __name__ == "__main__":
