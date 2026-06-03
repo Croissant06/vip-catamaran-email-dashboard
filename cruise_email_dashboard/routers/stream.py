@@ -12,6 +12,13 @@ from cruise_email_dashboard.services.notifications import broker
 router = APIRouter(tags=["stream"])
 
 
+async def _wait_for_disconnect(request: Request) -> None:
+    while True:
+        if await request.is_disconnected():
+            return
+        await asyncio.sleep(0.5)
+
+
 @router.get("/stream")
 async def stream(request: Request):
     """Server-Sent Events endpoint for lightweight dashboard push updates.
@@ -34,20 +41,40 @@ async def stream(request: Request):
 
     async def event_generator():
         queue = await broker.subscribe()
+        disconnect_task = asyncio.create_task(_wait_for_disconnect(request))
+        queue_task: asyncio.Task[str] | None = asyncio.create_task(queue.get())
         try:
             unread_count = _unread_count()
+            yield "retry: 5000\n\n"
             yield f"event: unread_count\ndata: {{\"count\": {unread_count}}}\n\n"
             while True:
-                if await request.is_disconnected():
+                done, _ = await asyncio.wait(
+                    {disconnect_task, queue_task},
+                    timeout=15,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if disconnect_task in done:
                     break
-                try:
-                    message = await asyncio.wait_for(queue.get(), timeout=15)
+                if queue_task in done:
+                    message = queue_task.result()
+                    queue_task = asyncio.create_task(queue.get())
                     yield message
                     unread_count = _unread_count()
                     yield f"event: unread_count\ndata: {{\"count\": {unread_count}}}\n\n"
-                except asyncio.TimeoutError:
+                else:
                     yield ": keep-alive\n\n"
         finally:
+            disconnect_task.cancel()
+            if queue_task is not None:
+                queue_task.cancel()
             broker.unsubscribe(queue)
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
