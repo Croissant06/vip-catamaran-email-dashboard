@@ -65,3 +65,4 @@ python seed.py
 - SMTP uses SSL on port `465`.
 - IMAP uses SSL on port `993`.
 - Current mailbox settings are editable from the Admin Panel.
+
