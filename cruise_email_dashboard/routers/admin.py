@@ -175,6 +175,47 @@ def _create_hotel_record(db: Session, name: str, aliases: str, bus_stop_id: str,
     return hotel
 
 
+def _reprocess_flagged_emails(db: Session) -> dict[str, int]:
+    total = db.query(EmailLog).count()
+    skipped_sent = db.query(EmailLog).filter(EmailLog.status == EmailStatus.sent).count()
+    targets = (
+        db.query(EmailLog)
+        .filter(EmailLog.status.in_([EmailStatus.flagged, EmailStatus.pending]))
+        .order_by(EmailLog.id.asc())
+        .all()
+    )
+
+    improved = 0
+    still_flagged = 0
+    for email in targets:
+        old_status = email.status
+        html_body = email.html_body or ""
+        text_body = email.full_body or ""
+        classified = classify_email(
+            db,
+            subject=email.subject or "",
+            body=text_body,
+            threshold=settings.fuzzy_match_threshold,
+            html_body=html_body,
+            fallback_sender=email.sender_email or "",
+            fallback_name=email.sender_name or "",
+        )
+        _, new_status = apply_classification_to_email(db, email, classified, improvement_only=False)
+        if old_status != new_status:
+            improved += 1
+        if new_status == EmailStatus.flagged:
+            still_flagged += 1
+        print(f"[REPROCESS] id={email.id} - {old_status.value} -> {new_status.value} - {classified.extraction_source}")
+
+    db.commit()
+    return {
+        "total": total,
+        "improved": improved,
+        "still_flagged": still_flagged,
+        "skipped_sent": skipped_sent,
+    }
+
+
 @router.get("")
 def admin_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     _ensure_hotel_management_access(user)
@@ -209,6 +250,12 @@ def hotel_management_page(request: Request, db: Session = Depends(get_db), user:
             bus_stops=db.query(BusStop).order_by(BusStop.name).all(),
         ),
     )
+
+
+@hotel_management_router.post("/hotel-management/reprocess-flagged")
+def hotel_management_reprocess_flagged(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _ensure_hotel_management_access(user)
+    return JSONResponse(_reprocess_flagged_emails(db))
 
 
 @router.get("/create-demo-booking")
@@ -416,46 +463,7 @@ def admin_import_history_status(user: User = Depends(get_admin_user)):
 
 @router.post("/reprocess-all")
 def admin_reprocess_all(db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
-    total = db.query(EmailLog).count()
-    skipped_sent = db.query(EmailLog).filter(EmailLog.status == EmailStatus.sent).count()
-    targets = (
-        db.query(EmailLog)
-        .filter(EmailLog.status.in_([EmailStatus.flagged, EmailStatus.pending]))
-        .order_by(EmailLog.id.asc())
-        .all()
-    )
-
-    improved = 0
-    still_flagged = 0
-    for email in targets:
-        old_status = email.status
-        html_body = email.html_body or ""
-        text_body = email.full_body or ""
-        classified = classify_email(
-            db,
-            subject=email.subject or "",
-            body=text_body,
-            threshold=settings.fuzzy_match_threshold,
-            html_body=html_body,
-            fallback_sender=email.sender_email or "",
-            fallback_name=email.sender_name or "",
-        )
-        _, new_status = apply_classification_to_email(db, email, classified, improvement_only=False)
-        if old_status != new_status:
-            improved += 1
-        if new_status == EmailStatus.flagged:
-            still_flagged += 1
-        print(f"[REPROCESS] id={email.id} - {old_status.value} -> {new_status.value} - {classified.extraction_source}")
-
-    db.commit()
-    return JSONResponse(
-        {
-            "total": total,
-            "improved": improved,
-            "still_flagged": still_flagged,
-            "skipped_sent": skipped_sent,
-        }
-    )
+    return JSONResponse(_reprocess_flagged_emails(db))
 
 
 @router.post("/hotels")
