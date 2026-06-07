@@ -7,6 +7,7 @@
         <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
         <form method="post" action="/hotel-management/hotels" class="space-y-3">
             <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+            <p class="text-xs text-gray-500">Enter the hotel name exactly as customers write it in their bookings. Add common variations in the Aliases field, for example Helena Park, Helena, The Helena. The system uses these names to automatically assign the correct pickup stop.</p>
             <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
             <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
             <select name="city_id" class="hotel-city-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
