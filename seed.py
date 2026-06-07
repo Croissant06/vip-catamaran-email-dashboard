@@ -15,28 +15,28 @@ def sunny_beach_data():
     # Aqua Paradise coords corrected to 42.6551,27.6823 (official GPS from aquaparadiseresort.bg).
     # SOL Nessebar Palas coords corrected to 42.6520,27.6870 (2.5 km south of Nessebar old town, beachfront).
     return [
-        ("Vlas - Petrol Station",               "Sveti Vlas main road stop",              42.7130, 27.7580, "https://www.google.com/maps?q=42.7130,27.7580", "the main road stop by the petrol station in Sveti Vlas",          VehicleType.doubledecker, "08:20", "13:30", "18:20", "09:20", "11:15", "16:50"),
-        ("Mercury Grand Market",                 "Mercury Grand Market, Sunny Beach",       42.7088, 27.7300, "https://www.google.com/maps?q=42.7088,27.7300", "the bus stop on the main road by Mercury Grand Market",           VehicleType.doubledecker, "08:20", "13:30", "18:20", "09:20", "11:15", "16:50"),
-        ("Secrets Resort - Main Road Bus Stop",  "Secrets Resort main road stop",           42.7068, 27.7248, "https://www.google.com/maps?q=42.7068,27.7248", "the main road bus stop outside Secrets Resort",                   VehicleType.doubledecker, "08:20", "13:30", "18:25", "09:20", "11:20", "16:55"),
-        ("Helena / Zora - Main Road Bus Stop",   "Helena / Zora main road stop",            42.7038, 27.7195, "https://www.google.com/maps?q=42.7038,27.7195", "the main road stop serving Helena and Zora",                      VehicleType.doubledecker, "08:25", "13:40", "18:25", "09:25", "11:20", "16:55"),
-        ("Efir Bus Stop",                        "Efir main road stop",                     42.7010, 27.7160, "https://www.google.com/maps?q=42.7010,27.7160", "the main road stop at Efir",                                      VehicleType.doubledecker, "08:30", "13:40", "18:30", "09:30", "11:30", "17:00"),
-        ("Palm Court Bus Stop",                  "Palm Court main road stop",               42.6992, 27.7128, "https://www.google.com/maps?q=42.6992,27.7128", "the main road stop near Palm Court",                              VehicleType.doubledecker, "08:30", "13:40", "18:30", "09:30", "11:30", "17:00"),
-        ("Opal Bus Stop",                        "Opal main road stop",                     42.6975, 27.7095, "https://www.google.com/maps?q=42.6975,27.7095", "the main road stop at Opal",                                      VehicleType.doubledecker, "08:30", "13:50", "18:30", "09:30", "11:30", "17:00"),
-        ("Flower Street Main Bus Stop",          "Flower Street, Sunny Beach",              42.6945, 27.7060, "https://www.google.com/maps?q=42.6945,27.7060", "the main road bus stop by Flower Street",                         VehicleType.doubledecker, "08:35", "13:50", "18:35", "09:35", "11:35", "17:05"),
+        ("Vlas - Petrol Station",               "Sveti Vlas main road stop",              42.7130, 27.7580, "https://www.google.com/maps?q=42.7130,27.7580", "the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas", VehicleType.doubledecker, "08:20", "13:30", "18:20", "09:20", "11:15", "16:50"),
+        ("Mercury Grand Market",                 "Mercury Grand Market, Sunny Beach",       42.7088, 27.7300, "https://www.google.com/maps?q=42.7088,27.7300", "the bus stop on the main road next to Mercury Grand Market",     VehicleType.doubledecker, "08:20", "13:30", "18:20", "09:20", "11:15", "16:50"),
+        ("Secrets Resort - Main Road Bus Stop",  "Secrets Resort main road stop",           42.7068, 27.7248, "https://www.google.com/maps?q=42.7068,27.7248", "the bus stop on the main road opposite Secrets Sunny Beach Resort and Spa", VehicleType.doubledecker, "08:20", "13:30", "18:25", "09:20", "11:20", "16:55"),
+        ("Helena / Zora - Main Road Bus Stop",   "Helena / Zora main road stop",            42.7038, 27.7195, "https://www.google.com/maps?q=42.7038,27.7195", "the bus stop on the main road running through the resort next to Aldo Supermarket", VehicleType.doubledecker, "08:25", "13:40", "18:25", "09:25", "11:20", "16:55"),
+        ("Efir Bus Stop",                        "Efir main road stop",                     42.7010, 27.7160, "https://www.google.com/maps?q=42.7010,27.7160", "the bus stop on the main road running through the resort, next to Hotel Efir", VehicleType.doubledecker, "08:30", "13:40", "18:30", "09:30", "11:30", "17:00"),
+        ("Palm Court Bus Stop",                  "Palm Court main road stop",               42.6992, 27.7128, "https://www.google.com/maps?q=42.6992,27.7128", "the bus stop on the main road running through the resort, opposite Hotel Riva", VehicleType.doubledecker, "08:30", "13:40", "18:30", "09:30", "11:30", "17:00"),
+        ("Opal Bus Stop",                        "Opal main road stop",                     42.6975, 27.7095, "https://www.google.com/maps?q=42.6975,27.7095", "the bus stop on the main road running through the resort, in front of Hotel Opal", VehicleType.doubledecker, "08:30", "13:50", "18:30", "09:30", "11:30", "17:00"),
+        ("Flower Street Main Bus Stop",          "Flower Street, Sunny Beach",              42.6945, 27.7060, "https://www.google.com/maps?q=42.6945,27.7060", "the bus stop opposite the main pedestrian street in Sunny Beach", VehicleType.doubledecker, "08:35", "13:50", "18:35", "09:35", "11:35", "17:05"),
         ("Hotel Best Western / Sveshest",        "Best Western / Sveshest main road stop",  42.6928, 27.7038, "https://www.google.com/maps?q=42.6928,27.7038", "the main road stop next to Best Western / Sveshest",              VehicleType.doubledecker, "08:35", "13:50", "18:35", "09:35", "11:35", "17:05"),
-        ("Royal Sun / Arda Bus Stop",            "Royal Sun / Arda main road stop",         42.6900, 27.7012, "https://www.google.com/maps?q=42.6900,27.7012", "the main road stop for Royal Sun and Arda",                       VehicleType.doubledecker, "08:40", "14:00", "18:40", "09:40", "11:40", "17:10"),
-        ("Black Sea Hotel Bus Stop",             "Black Sea Hotel main road stop",          42.6885, 27.6990, "https://www.google.com/maps?q=42.6885,27.6990", "the main road stop at Black Sea Hotel",                           VehicleType.doubledecker, "08:40", "14:00", "18:40", "09:40", "11:40", "17:10"),
-        ("Belleville / Cacao Bus Stop",          "Belleville / Cacao main road stop",       42.6860, 27.6970, "https://www.google.com/maps?q=42.6860,27.6970", "the main road stop for Belleville and Cacao",                     VehicleType.doubledecker, "08:45", "14:00", "18:45", "09:45", "11:45", "17:15"),
-        ("Football Stadium Bus Stop",            "Nessebar football stadium stop",          42.6840, 27.6952, "https://www.google.com/maps?q=42.6840,27.6952", "the main road bus stop by the football stadium",                  VehicleType.doubledecker, "08:45", "14:10", "18:45", "09:45", "11:45", "17:15"),
-        ("Festa Panorama Ness Bus Stop",         "Festa Panorama stop",                     42.6822, 27.6938, "https://www.google.com/maps?q=42.6822,27.6938", "the stop by Festa Panorama in Nessebar",                          VehicleType.doubledecker, "08:50", "14:15", "18:50", "09:50", "11:50", "17:20"),
+        ("Royal Sun / Arda Bus Stop",            "Royal Sun / Arda main road stop",         42.6900, 27.7012, "https://www.google.com/maps?q=42.6900,27.7012", "the bus stop on the main road running through the resort, next to The Royal Sun Complex", VehicleType.doubledecker, "08:40", "14:00", "18:40", "09:40", "11:40", "17:10"),
+        ("Persani (Black Sea Hotel Bus Stop)",   "Black Sea Hotel main road stop",          42.6885, 27.6990, "https://www.google.com/maps?q=42.6885,27.6990", "the bus stop on the main road running through the resort, next to Hotel Persani", VehicleType.doubledecker, "08:40", "14:00", "18:40", "09:40", "11:40", "17:10"),
+        ("Belleville / Cacao Bus Stop",          "Belleville / Cacao main road stop",       42.6860, 27.6970, "https://www.google.com/maps?q=42.6860,27.6970", "the bus stop on the main road running through the resort, next to Hotel BelleVille", VehicleType.doubledecker, "08:45", "14:00", "18:45", "09:45", "11:45", "17:15"),
+        ("Football Stadium Bus Stop",            "Nessebar football stadium stop",          42.6840, 27.6952, "https://www.google.com/maps?q=42.6840,27.6952", "the bus stop on the main road running through the resort, next to Hotel The Step and Diamant Residence", VehicleType.doubledecker, "08:45", "14:10", "18:45", "09:45", "11:45", "17:15"),
+        ("Festa Panorama Ness Bus Stop",         "Festa Panorama stop",                     42.6822, 27.6938, "https://www.google.com/maps?q=42.6822,27.6938", "the bus stop on the main road opposite Hotel Festa Panorama", VehicleType.doubledecker, "08:50", "14:15", "18:50", "09:50", "11:50", "17:20"),
         # Minibus stops — south of Nessebar, corrected coords from official hotel GPS sources
-        ("Aqua Paradise Hotel - with Minibus",   "Aqua Paradise Hotel",                     42.6551, 27.6823, "https://www.google.com/maps?q=42.6551,27.6823", "the hotel entrance at Aqua Paradise",                             VehicleType.minibus,      "08:40", "14:10", "18:40", "09:36", "11:40", "17:10"),
-        ("SOL Nessebar Palas - with Minibus",    "SOL Nessebar Palace",                     42.6520, 27.6870, "https://www.google.com/maps?q=42.6520,27.6870", "the entrance area at SOL Nessebar Palas",                         VehicleType.minibus,      "08:40", "14:10", "18:40", "09:40", "11:40", "17:10"),
-        ("Panteleimon Bus Stop - with Minibus",  "Panteleimon stop",                        42.6670, 27.7090, "https://www.google.com/maps?q=42.6670,27.7090", "the minibus stop by Panteleimon",                                 VehicleType.minibus,      "08:40", "14:15", "18:45", "09:40", "11:40", "17:10"),
-        ("Biliyana Ness - with Minibus",         "Biliyana stop",                           42.6652, 27.7110, "https://www.google.com/maps?q=42.6652,27.7110", "the minibus stop by Biliyana",                                    VehicleType.minibus,      "08:45", "14:15", "18:45", "09:45", "11:45", "17:15"),
-        ("Oasis Ness - with Minibus",            "Oasis Nessebar",                          42.6635, 27.7132, "https://www.google.com/maps?q=42.6635,27.7132", "the minibus stop by Oasis Nessebar",                              VehicleType.minibus,      "08:45", "14:15", "18:45", "09:45", "11:45", "17:15"),
-        ("Marina Palas - with Minibus",          "Marina Palace",                           42.6618, 27.7158, "https://www.google.com/maps?q=42.6618,27.7158", "the minibus stop at Marina Palas",                                VehicleType.minibus,      "08:50", "14:20", "18:50", "09:50", "11:45", "17:15"),
-        ("Meet at Catamaran",                    "Nessebar old town catamaran meeting point",42.6595, 27.7210, "https://www.google.com/maps?q=42.6595,27.7210", "the catamaran boarding point",                                    VehicleType.minibus,      "08:55", "14:25", "18:55", "09:55", "11:50", "17:20"),
+        ("Aqua Paradise Hotel - with Minibus",   "Aqua Paradise Hotel",                     42.6551, 27.6823, "https://www.google.com/maps?q=42.6551,27.6823", "outside Aqua Paradise Hotel. You can identify our minibus by the 'VIP Catamaran' sign on the front window", VehicleType.minibus,      "08:40", "14:10", "18:40", "09:36", "11:40", "17:10"),
+        ("SOL Nessebar Palas - with Minibus",    "SOL Nessebar Palace",                     42.6520, 27.6870, "https://www.google.com/maps?q=42.6520,27.6870", "at the barrier next to SOL Nessebar Palace Hotel. You can identify our minibus by the 'VIP Catamaran' sign on the front window", VehicleType.minibus,      "08:40", "14:10", "18:40", "09:40", "11:40", "17:10"),
+        ("Panteleimon Bus Stop - with Minibus",  "Panteleimon stop",                        42.6670, 27.7090, "https://www.google.com/maps?q=42.6670,27.7090", "at bus stop Panteleimon, number 36, on the main road. You can identify our minibus by the 'VIP Catamaran' sign on the front window", VehicleType.minibus,      "08:40", "14:15", "18:45", "09:40", "11:40", "17:10"),
+        ("Biliyana Ness - with Minibus",         "Biliyana stop",                           42.6652, 27.7110, "https://www.google.com/maps?q=42.6652,27.7110", "at the bus stop on the main road near the Bilyana Beach Hotel. You can identify our minibus by the 'VIP Catamaran' sign on the front window", VehicleType.minibus,      "08:45", "14:15", "18:45", "09:45", "11:45", "17:15"),
+        ("Oasis Ness - with Minibus",            "Oasis Nessebar",                          42.6635, 27.7132, "https://www.google.com/maps?q=42.6635,27.7132", "at the bus stop on the road, next to Bistro Oasis. You can identify our minibus by the 'VIP Catamaran' sign on the front window", VehicleType.minibus,      "08:45", "14:15", "18:45", "09:45", "11:45", "17:15"),
+        ("Marina Palas - with Minibus",          "Marina Palace",                           42.6618, 27.7158, "https://www.google.com/maps?q=42.6618,27.7158", "right outside Hotel Sol Marina Palace. You can recognise our minibus by the VIP Catamaran sign on the front window", VehicleType.minibus,      "08:50", "14:20", "18:50", "09:50", "11:45", "17:15"),
+        ("Meet at Catamaran",                    "Nessebar old town catamaran meeting point",42.6595, 27.7210, "https://www.google.com/maps?q=42.6595,27.7210", "at the exact location of our catamaran. You must be there at [time] as we sail away at [time]", VehicleType.minibus,      "08:55", "14:25", "18:55", "09:55", "11:50", "17:20"),
     ]
 
 
@@ -81,7 +81,7 @@ def seed() -> None:
             ("Helena Park",          "Helena, Zora, The Helena Park hotel",        "Helena / Zora - Main Road Bus Stop"),
             ("Best Western / Sveshest", "Best Western,Sveshest,AluaSoul Sunny Beach,AluaSoul", "Hotel Best Western / Sveshest"),
             ("Royal Sun / Arda",     "Royal Sun,Arda",                             "Royal Sun / Arda Bus Stop"),
-            ("Black Sea Hotel",      "Black Sea",                                  "Black Sea Hotel Bus Stop"),
+            ("Black Sea Hotel",      "Black Sea",                                  "Persani (Black Sea Hotel Bus Stop)"),
             ("Belleville / Cacao",   "Belleville,Cacao",                           "Belleville / Cacao Bus Stop"),
             ("Aqua Paradise Hotel",  "Aqua Paradise",                              "Aqua Paradise Hotel - with Minibus"),
             ("SOL Nessebar Palas",   "SOL Nessebar,Nessebar Palas",                "SOL Nessebar Palas - with Minibus"),
@@ -134,35 +134,6 @@ def seed() -> None:
         for name, aliases, stop_name in obzor_hotels:
             db.add(Hotel(name=name, aliases=aliases, bus_stop_id=stops_by_name[stop_name].id, city_id=obzor.id))
 
-        # Pomorie stops — corrected coordinates and links.
-        # Sunset Resort: corrected to 42.5635,27.6042 (verified via mouzenidis.com / travelmyth.com).
-        # Hotel Wave: kept at 42.5730,27.6080 — located north of main Pomorie on the coast, plausible.
-        # "Hotel Aqua Paradise" at 42.6705,27.6990 removed — this is not in Pomorie,
-        #   it is the Nessebar Aqua Paradise. A Pomorie pickup at that location makes no sense.
-        #   If VIP Catamaran does serve that hotel from a Pomorie-area route, re-add with correct city_id.
-        pomorie_rows = [
-            ("Saint George",      "Saint George",  "Saint George",      42.5560, 27.6360, "https://www.google.com/maps?q=42.5560,27.6360", "outside Saint George",      "08:05"),
-            ("Hotel Grand Pomori","Grand Pomori",  "Hotel Grand Pomori", 42.5575, 27.6295, "https://www.google.com/maps?q=42.5575,27.6295", "outside Hotel Grand Pomori","08:10"),
-            ("Sunset Resort",     "Sunset Resort", "Sunset Resort",      42.5635, 27.6042, "https://www.google.com/maps?q=42.5635,27.6042", "outside Sunset Resort",     "08:15"),
-            ("Hotel Wave",        "Wave",          "Hotel Wave",         42.5730, 27.6080, "https://www.google.com/maps?q=42.5730,27.6080", "outside Hotel Wave",        "08:35"),
-        ]
-        for hotel_name, aliases, stop_name, lat, lng, maps_url, description, pickup in pomorie_rows:
-            stop = BusStop(
-                name=stop_name,
-                address=stop_name,
-                latitude=lat,
-                longitude=lng,
-                city_id=pomorie.id,
-                maps_url=maps_url,
-                description=description,
-                vehicle_type=VehicleType.minibus,
-            )
-            db.add(stop)
-            db.flush()
-            stops_by_name[stop_name] = stop
-            db.add(Schedule(bus_stop_id=stop.id, pickup_time=time.fromisoformat(pickup), season_label="tuesday_friday_morning", valid_days="1,4"))
-            db.add(Hotel(name=hotel_name, aliases=aliases, bus_stop_id=stop.id, city_id=pomorie.id))
-
         if not db.query(User).filter(User.username == "presadmin").first():
             db.add(User(username="presadmin", hashed_password=hash_password("presko06"), role=UserRole.admin))
         if not db.query(User).filter(User.username == "staff").first():
@@ -211,27 +182,6 @@ def seed() -> None:
                 "status": EmailStatus.sent,
                 "received_at": datetime.now(UTC).replace(tzinfo=None) - timedelta(days=1, hours=2),
                 "warning_note": "",
-            },
-            {
-                "subject": "Pomorie VIP Catamaran Booking Confirmation",
-                "sender_email": "customer-pomorie@reply.getyourguide.com",
-                "sender_name": "Elena Petrova",
-                "detected_hotel": db.query(Hotel).filter(Hotel.name == "Saint George").first(),
-                "booking_type": "POMORIE",
-                "cruise_date": date(2026, 7, 8),
-                "cruise_time": time(9, 0),
-                "num_adults": 2,
-                "booking_number": "GYG-PO-3001",
-                "gyg_ref": "GYGPOM54321",
-                "total_price": "150 EUR",
-                "customer_phone": "+359887765432",
-                "detected_language": "en",
-                "raw_customer_name_extraction": "Elena Petrova",
-                "raw_hotel_extraction": "Saint George",
-                "extraction_source": "notes_hotel_field",
-                "status": EmailStatus.flagged,
-                "received_at": datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=7),
-                "warning_note": "Pomorie pickups are Tuesday and Friday only. Please contact the customer to clarify their cruise date.",
             },
             {
                 "subject": "Sunset Cruise - VIP Catamaran Booking Confirmation",

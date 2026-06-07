@@ -48,9 +48,6 @@ DEMO_CITY_BOOKING_TYPES = {
     "Obzor": [
         {"value": "OBZOR", "label": "Obzor Route"},
     ],
-    "Pomorie": [
-        {"value": "POMORIE", "label": "Tuesday / Friday Morning"},
-    ],
 }
 
 
@@ -97,8 +94,19 @@ def _city_sort_key(city: City) -> tuple[int, str]:
     return order.get(city.name, 99), city.name
 
 
+def _ui_cities_with_stops(db: Session) -> list[City]:
+    cities = (
+        db.query(City)
+        .join(BusStop, BusStop.city_id == City.id)
+        .distinct()
+        .order_by(City.name)
+        .all()
+    )
+    return sorted(cities, key=_city_sort_key)
+
+
 def _demo_booking_payload(db: Session) -> tuple[list[City], dict[str, list[dict[str, str | int]]], dict[str, list[dict[str, str]]]]:
-    cities = sorted(db.query(City).order_by(City.name).all(), key=_city_sort_key)
+    cities = _ui_cities_with_stops(db)
     hotels = db.query(Hotel).order_by(Hotel.name).all()
     city_hotels: dict[str, list[dict[str, str | int]]] = {str(city.id): [] for city in cities}
     city_booking_types: dict[str, list[dict[str, str]]] = {}
@@ -143,7 +151,7 @@ def admin_page(request: Request, db: Session = Depends(get_db), user: User = Dep
         template_context(
             request,
             user=user,
-            cities=db.query(City).order_by(City.name).all(),
+            cities=_ui_cities_with_stops(db),
             hotels=db.query(Hotel).order_by(Hotel.name).all(),
             bus_stops=db.query(BusStop).order_by(BusStop.name).all(),
             schedules=db.query(Schedule).order_by(Schedule.season_label, Schedule.pickup_time).all(),

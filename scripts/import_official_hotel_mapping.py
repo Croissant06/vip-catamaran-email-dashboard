@@ -27,7 +27,7 @@ STOP_NAME_MAP = {
     "FLOWER STREET MAIN BUS STOP": "Flower Street Main Bus Stop",
     "BEST WESTERN / SVESHEST": "Hotel Best Western / Sveshest",
     "ROYAL SUN / ARDA BUS STOP": "Royal Sun / Arda Bus Stop",
-    "BLACK SEA HOTEL BUS STOP": "Black Sea Hotel Bus Stop",
+    "BLACK SEA HOTEL BUS STOP": "Persani (Black Sea Hotel Bus Stop)",
     "BELLEVILLE / CACAO BUS STOP": "Belleville / Cacao Bus Stop",
     "FOOTBALL STADIUM BUS STOP": "Football Stadium Bus Stop",
     "AQUA PARADISE HOTEL - WITH MINIBUS": "Aqua Paradise Hotel - with Minibus",
