@@ -1,0 +1,12 @@
+Cher/Chère {customer_name},
+
+Merci pour votre réservation pour le {cruise_date}, {cruise_day}.
+
+Afin d'organiser votre prise en charge, pourriez-vous nous
+indiquer le nom de l'hôtel ou du complexe où vous séjournerez ?
+
+Dès que nous aurons cette information, nous vous enverrons
+votre point de prise en charge et l'heure prévue dès que possible.
+
+Cordialement,
+VIP Catamaran
