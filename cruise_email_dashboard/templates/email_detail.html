@@ -2,11 +2,17 @@
 {% block header_title %}Email Detail{% endblock %}
 {% block header_subtitle %}Review, adjust, and send a reply{% endblock %}
 {% block content %}
+{% set sender_email_lower = (email.sender_email or "")|lower %}
+{% set is_relay_address = sender_email_lower.endswith("@reply.getyourguide.com") or sender_email_lower.endswith("@reply.bookeo.com") %}
 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
     <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="text-lg font-semibold break-words">{{ email.subject }}</h2>
-            {% include "_status_badge.html" %}
+            <div class="flex flex-col items-start gap-2 sm:items-end">
+                <div id="statusBadge">{% include "_status_badge.html" %}</div>
+                <p id="sendErrorMessage" class="{% if email.status.value == 'send_failed' and email.send_error %}block{% else %}hidden{% endif %} max-w-md text-sm text-rose-700 sm:text-right">{{ email.send_error }}</p>
+                <p id="sendSuccessMessage" class="hidden max-w-md text-sm text-green-700 sm:text-right"></p>
+            </div>
         </div>
         <div id="mobilePresenceBar" class="mb-4 hidden rounded-xl border border-slate-200 bg-slate-50 p-3 md:hidden">
             <div id="mobilePresenceUsers" class="flex flex-wrap items-center gap-1"></div>
@@ -53,6 +59,11 @@
             {% if email.status.value == "cancelled" %}
             <div class="mb-4 rounded-md border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
                 This is a cancellation notification. No reply is required.
+            </div>
+            {% endif %}
+            {% if is_relay_address %}
+            <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                This recipient uses a booking-platform relay address ({{ email.sender_email }}). Replies to relay addresses may not be delivered. If sending fails, the recommended fallback is to reply from your normal email inbox or contact the customer directly by phone if you have their number.
             </div>
             {% endif %}
             {% if "No hotel provided by customer" in (email.warning_note or "") %}
@@ -186,9 +197,14 @@
         {% endif %}
         {% if email.status.value != "cancelled" %}
         <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <form method="post" action="/inbox/{{ email.id }}/send">
+            <form id="sendReplyForm" method="post" action="/inbox/{{ email.id }}/send">
                 <button type="submit" class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Send Reply</button>
             </form>
+            {% if email.status.value == "send_failed" %}
+            <button id="retrySendButton" type="button" data-send-url="/inbox/{{ email.id }}/send" class="min-h-11 w-full rounded-md bg-rose-600 px-4 py-2 text-white transition duration-150 hover:bg-rose-700 sm:w-auto">
+                Retry Send
+            </button>
+            {% endif %}
             <form method="post" action="/inbox/{{ email.id }}/manual">
                 <button type="submit" class="min-h-11 w-full rounded-md bg-red-500 px-4 py-2 text-white transition duration-150 hover:bg-red-600 sm:w-auto">Flag as Manual</button>
             </form>
@@ -215,6 +231,11 @@ const reassignForm = document.querySelector('form[action="/inbox/{{ email.id }}/
 const hotelSelect = document.getElementById("detectedHotelSelect");
 const stopSelect = document.getElementById("assignedBusStopSelect");
 const helperMessage = document.getElementById("busStopAutoUpdateMessage");
+const statusBadge = document.getElementById("statusBadge");
+const sendErrorMessage = document.getElementById("sendErrorMessage");
+const sendSuccessMessage = document.getElementById("sendSuccessMessage");
+const retrySendButton = document.getElementById("retrySendButton");
+const sendReplyForm = document.getElementById("sendReplyForm");
 const presenceEmailId = {{ email.id }};
 const desktopPresenceBar = document.getElementById("desktopPresenceBar");
 const desktopPresenceUsers = document.getElementById("desktopPresenceUsers");
@@ -223,9 +244,51 @@ const mobilePresenceUsers = document.getElementById("mobilePresenceUsers");
 let presenceIntervalId = null;
 let currentPresenceUsers = [];
 let presenceLeaving = false;
+const statusBadgeClasses = {
+    pending: "bg-yellow-100 text-yellow-700 rounded-full px-2 py-0.5 text-xs",
+    sent: "bg-green-100 text-green-700 rounded-full px-2 py-0.5 text-xs",
+    flagged: "bg-red-100 text-red-700 rounded-full px-2 py-0.5 text-xs",
+    manual: "bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs",
+    cancelled: "bg-slate-200 text-slate-600 rounded-full px-2 py-0.5 text-xs",
+    send_failed: "bg-rose-100 text-rose-700 rounded-full px-2 py-0.5 text-xs",
+};
 
 function defaultStopForHotel(hotelId) {
     return hotelStopDefaults[String(hotelId)] ?? null;
+}
+
+function updateStatusBadge(status) {
+    if (!statusBadge) {
+        return;
+    }
+    const classes = statusBadgeClasses[status] || "bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs";
+    statusBadge.innerHTML = `<span class="${classes}">${status}</span>`;
+}
+
+function showSendError(message) {
+    if (!sendErrorMessage) {
+        return;
+    }
+    if (!message) {
+        sendErrorMessage.textContent = "";
+        sendErrorMessage.classList.add("hidden");
+        return;
+    }
+    sendErrorMessage.textContent = message;
+    sendErrorMessage.classList.remove("hidden");
+}
+
+function showSendSuccess(message) {
+    if (!sendSuccessMessage) {
+        return;
+    }
+    if (!message) {
+        sendSuccessMessage.textContent = "";
+        sendSuccessMessage.classList.add("hidden");
+        return;
+    }
+    sendSuccessMessage.textContent = message;
+    sendSuccessMessage.classList.remove("hidden");
 }
 
 function showAutoUpdateMessage() {
@@ -372,6 +435,44 @@ function stopHeartbeat() {
     presenceIntervalId = null;
 }
 
+async function retrySendInPlace() {
+    if (!retrySendButton) {
+        return;
+    }
+    const originalLabel = retrySendButton.textContent;
+    retrySendButton.disabled = true;
+    retrySendButton.textContent = "Retrying...";
+    showSendSuccess("");
+
+    try {
+        const response = await fetch(retrySendButton.dataset.sendUrl, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        });
+        const payload = await response.json();
+        updateStatusBadge(payload.status || "send_failed");
+        if (payload.ok) {
+            showSendError("");
+            showSendSuccess(payload.sent_at ? `Reply sent successfully at ${payload.sent_at}.` : "Reply sent successfully.");
+            retrySendButton.classList.add("hidden");
+            sendReplyForm?.classList.add("hidden");
+            return;
+        }
+        showSendSuccess("");
+        showSendError(payload.send_error || "Send failed.");
+    } catch (error) {
+        showSendSuccess("");
+        showSendError("Retry failed before the server returned a response.");
+    } finally {
+        retrySendButton.disabled = false;
+        retrySendButton.textContent = originalLabel;
+    }
+}
+
 hotelSelect?.addEventListener("change", () => {
     const defaultStopId = defaultStopForHotel(hotelSelect.value);
     if (!stopSelect) {
@@ -431,6 +532,7 @@ window.addEventListener("pagehide", () => {
     notifyPresenceLeave();
 });
 window.addEventListener("resize", syncPresenceBarVisibility);
+retrySendButton?.addEventListener("click", retrySendInPlace);
 startHeartbeat();
 </script>
 {% endblock %}

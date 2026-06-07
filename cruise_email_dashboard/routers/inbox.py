@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Form, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 
 from cruise_email_dashboard.database.db import get_db
@@ -52,6 +52,12 @@ def _filter_summary(quick_range: str, start_date: str, end_date: str) -> str:
     if end_date:
         return f"through {end_date}"
     return "all dates"
+
+
+def _wants_json_response(request: Request) -> bool:
+    accept = request.headers.get("accept", "").lower()
+    requested_with = request.headers.get("x-requested-with", "").lower()
+    return "application/json" in accept or requested_with == "xmlhttprequest"
 
 
 @router.get("")
@@ -157,20 +163,39 @@ def email_detail(request: Request, email_id: int, db: Session = Depends(get_db),
 
 
 @router.post("/{email_id}/send")
-def send_email_reply(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def send_email_reply(
+    email_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email.status == EmailStatus.cancelled:
+        if _wants_json_response(request):
+            return JSONResponse({"ok": False, "status": email.status.value, "send_error": ""}, status_code=400)
         return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    send_succeeded = False
     try:
         send_reply(email)
         email.status = EmailStatus.sent
         email.sent_at = datetime.now(UTC).replace(tzinfo=None)
+        email.send_error = ""
+        send_succeeded = True
     except Exception as exc:
         if email.status != EmailStatus.send_failed:
             email.status = EmailStatus.send_failed
         email.send_error = str(exc)
     email.is_new = False
     db.commit()
+    if _wants_json_response(request):
+        return JSONResponse(
+            {
+                "ok": send_succeeded,
+                "status": email.status.value,
+                "send_error": email.send_error or "",
+                "sent_at": email.sent_at.strftime("%Y-%m-%d %H:%M") if email.sent_at else "",
+            }
+        )
     return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
 
 
