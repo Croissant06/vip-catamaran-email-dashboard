@@ -11,8 +11,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from cruise_email_dashboard.database.db import SessionLocal, get_db
-from cruise_email_dashboard.database.models import BusStop, City, EmailLog, EmailStatus, Hotel, Schedule, User, VehicleType
-from cruise_email_dashboard.dependencies import get_admin_user, template_context, templates
+from cruise_email_dashboard.database.models import BusStop, City, EmailLog, EmailStatus, Hotel, Schedule, User, UserRole, VehicleType
+from cruise_email_dashboard.dependencies import get_admin_user, get_current_user, template_context, templates
 from cruise_email_dashboard.services.classifier import _build_label_map, classify_email, parse_booking_email
 from cruise_email_dashboard.services.email_poller import apply_classification_to_email, poll_now, reset_poll_backoff
 from cruise_email_dashboard.services.mailbox import mailbox_status
@@ -54,6 +54,12 @@ DEMO_CITY_BOOKING_TYPES = {
         {"value": "OBZOR", "label": "Obzor Route"},
     ],
 }
+
+
+def _ensure_hotel_management_access(user: User) -> User:
+    if user.role not in {UserRole.admin, UserRole.staff}:
+        raise HTTPException(status_code=403, detail="Hotel management access required.")
+    return user
 
 
 def _parse_optional_int(value: str) -> int | None:
@@ -150,7 +156,8 @@ def _demo_booking_subject(booking_type: str) -> str:
 
 
 @router.get("")
-def admin_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def admin_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _ensure_hotel_management_access(user)
     return templates.TemplateResponse(
         "admin.html",
         template_context(
@@ -407,8 +414,9 @@ def create_hotel(
     bus_stop_id: str = Form(""),
     city_id: str = Form(""),
     db: Session = Depends(get_db),
-    user: User = Depends(get_admin_user),
+    user: User = Depends(get_current_user),
 ):
+    _ensure_hotel_management_access(user)
     parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
     bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
     parsed_city_id = _parse_optional_int(city_id) or (bus_stop.city_id if bus_stop else None)

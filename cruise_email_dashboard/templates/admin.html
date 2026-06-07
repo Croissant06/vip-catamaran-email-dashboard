@@ -2,11 +2,16 @@
 {% block header_title %}Admin Panel{% endblock %}
 {% block header_subtitle %}Manage master data, templates, and mailbox settings{% endblock %}
 {% block content %}
+{% set staff_hotel_only = current_user.role.value == "staff" %}
 <div class="mb-6 flex flex-wrap gap-2">
+    {% if staff_hotel_only %}
+    <span class="inline-flex min-h-11 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm text-white">Hotel Management</span>
+    {% else %}
     <button type="button" data-admin-tab-trigger="general" class="admin-tab-trigger min-h-11 rounded-md bg-indigo-600 px-4 py-2 text-sm text-white transition duration-150 hover:bg-indigo-700">General</button>
     <button type="button" data-admin-tab-trigger="hotels" class="admin-tab-trigger min-h-11 rounded-md bg-gray-200 px-4 py-2 text-sm text-gray-700 transition duration-150 hover:bg-gray-300">Hotel Management</button>
+    {% endif %}
 </div>
-<div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 {% if not staff_hotel_only %}xl:grid-cols-2{% endif %}">
     <div class="space-y-6">
         <div data-admin-panel="hotels" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
@@ -25,6 +30,7 @@
                 <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Hotel</button>
             </form>
         </div>
+        {% if not staff_hotel_only %}
         <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Bus Stop</h2>
             <form method="post" action="/admin/bus-stops" class="space-y-3">
@@ -65,7 +71,9 @@
                 <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Schedule</button>
             </form>
         </div>
+        {% endif %}
     </div>
+    {% if not staff_hotel_only %}
     <div class="space-y-6">
         <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <div class="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -199,7 +207,9 @@
             </form>
         </div>
     </div>
+    {% endif %}
 </div>
+{% if not staff_hotel_only %}
 <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
     <div data-admin-panel="hotels" class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Hotels</h2>
@@ -287,6 +297,8 @@
         </div>
     </div>
 </div>
+{% endif %}
+{% if not staff_hotel_only %}
 <div id="reprocessModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4">
     <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
         <div class="mb-4 flex items-center justify-between">
@@ -296,18 +308,24 @@
         <pre id="reprocessSummary" class="rounded-lg bg-slate-50 p-4 text-sm text-slate-800 whitespace-pre-wrap"></pre>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>
+const staffHotelOnly = {{ "true" if staff_hotel_only else "false" }};
+
 function setStatus(dotId, textId, status, message) {
     const dot = document.getElementById(dotId);
     const text = document.getElementById(textId);
+    if (!dot || !text) {
+        return;
+    }
     dot.className = `h-3 w-3 rounded-full ${status === "ok" ? "bg-green-500" : status === "pending" ? "bg-yellow-500" : "bg-red-500"}`;
     text.textContent = message;
 }
 
 function setAdminTab(tabName) {
-    const validTab = tabName === "hotels" ? "hotels" : "general";
+    const validTab = staffHotelOnly ? "hotels" : (tabName === "hotels" ? "hotels" : "general");
     window.localStorage.setItem("adminActiveTab", validTab);
     document.querySelectorAll("[data-admin-panel]").forEach((panel) => {
         panel.classList.toggle("hidden", panel.dataset.adminPanel !== validTab);
@@ -430,17 +448,21 @@ document.querySelectorAll("[data-admin-tab-trigger]").forEach((button) => {
     button.addEventListener("click", () => setAdminTab(button.dataset.adminTabTrigger));
 });
 
-document.getElementById("refreshMailboxStatus")?.addEventListener("click", () => runSingleFlight("refreshMailboxStatus", refreshMailboxStatus));
-document.getElementById("reprocessAllFlagged")?.addEventListener("click", () => runSingleFlight("reprocessAllFlagged", runReprocessAll));
-document.getElementById("runPollNow")?.addEventListener("click", () => runSingleFlight("runPollNow", () => postMailboxAction("/admin/mailbox-status/run-poll")));
-document.getElementById("resetBackoff")?.addEventListener("click", () => runSingleFlight("resetBackoff", () => postMailboxAction("/admin/mailbox-status/reset-backoff")));
-document.getElementById("closeReprocessModal")?.addEventListener("click", hideReprocessModal);
-document.getElementById("reprocessModal")?.addEventListener("click", (event) => {
-    if (event.target.id === "reprocessModal") {
-        hideReprocessModal();
-    }
-});
-setAdminTab(window.localStorage.getItem("adminActiveTab") || "general");
-refreshMailboxStatus();
+if (!staffHotelOnly) {
+    document.getElementById("refreshMailboxStatus")?.addEventListener("click", () => runSingleFlight("refreshMailboxStatus", refreshMailboxStatus));
+    document.getElementById("reprocessAllFlagged")?.addEventListener("click", () => runSingleFlight("reprocessAllFlagged", runReprocessAll));
+    document.getElementById("runPollNow")?.addEventListener("click", () => runSingleFlight("runPollNow", () => postMailboxAction("/admin/mailbox-status/run-poll")));
+    document.getElementById("resetBackoff")?.addEventListener("click", () => runSingleFlight("resetBackoff", () => postMailboxAction("/admin/mailbox-status/reset-backoff")));
+    document.getElementById("closeReprocessModal")?.addEventListener("click", hideReprocessModal);
+    document.getElementById("reprocessModal")?.addEventListener("click", (event) => {
+        if (event.target.id === "reprocessModal") {
+            hideReprocessModal();
+        }
+    });
+}
+setAdminTab(staffHotelOnly ? "hotels" : (window.localStorage.getItem("adminActiveTab") || "general"));
+if (!staffHotelOnly) {
+    refreshMailboxStatus();
+}
 </script>
 {% endblock %}
