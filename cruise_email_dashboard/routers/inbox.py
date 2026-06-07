@@ -211,11 +211,18 @@ def flag_manual(email_id: int, db: Session = Depends(get_db), user: User = Depen
 
 
 @router.post("/{email_id}/mark-unread")
-def mark_email_unread(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def mark_email_unread(
+    email_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email:
         email.is_new = True
         db.commit()
+    if _wants_json_response(request):
+        return JSONResponse({"ok": bool(email), "is_new": bool(email and email.is_new)})
     return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
 
 
