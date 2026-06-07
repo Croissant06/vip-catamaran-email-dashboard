@@ -25,6 +25,7 @@ from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 from cruise_email_dashboard.settings import settings, update_env
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+hotel_management_router = APIRouter(tags=["hotel-management"])
 DEFAULT_HISTORY_IMPORT_DATE = "2025-07-01"
 
 DEFAULT_REPLIES_DIR = REPLIES_DIR / "defaults"
@@ -164,6 +165,16 @@ def _demo_booking_subject(booking_type: str) -> str:
     return subjects.get(booking_type, "VIP Catamaran Booking Confirmation")
 
 
+def _create_hotel_record(db: Session, name: str, aliases: str, bus_stop_id: str, city_id: str) -> Hotel:
+    parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
+    bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
+    parsed_city_id = _parse_optional_int(city_id) or (bus_stop.city_id if bus_stop else None)
+    hotel = Hotel(name=name, aliases=aliases, bus_stop_id=parsed_bus_stop_id, city_id=parsed_city_id)
+    db.add(hotel)
+    db.commit()
+    return hotel
+
+
 @router.get("")
 def admin_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     _ensure_hotel_management_access(user)
@@ -182,6 +193,20 @@ def admin_page(request: Request, db: Session = Depends(get_db), user: User = Dep
             template_placeholders=TEMPLATE_PLACEHOLDERS,
             history_import_status=get_history_import_status(),
             history_import_default_since=DEFAULT_HISTORY_IMPORT_DATE,
+        ),
+    )
+
+
+@hotel_management_router.get("/hotel-management")
+def hotel_management_page(request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _ensure_hotel_management_access(user)
+    return templates.TemplateResponse(
+        "hotel_management.html",
+        template_context(
+            request,
+            user=user,
+            cities=_ui_cities_with_stops(db),
+            bus_stops=db.query(BusStop).order_by(BusStop.name).all(),
         ),
     )
 
@@ -443,12 +468,22 @@ def create_hotel(
     user: User = Depends(get_current_user),
 ):
     _ensure_hotel_management_access(user)
-    parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
-    bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
-    parsed_city_id = _parse_optional_int(city_id) or (bus_stop.city_id if bus_stop else None)
-    db.add(Hotel(name=name, aliases=aliases, bus_stop_id=parsed_bus_stop_id, city_id=parsed_city_id))
-    db.commit()
+    _create_hotel_record(db, name=name, aliases=aliases, bus_stop_id=bus_stop_id, city_id=city_id)
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@hotel_management_router.post("/hotel-management/hotels")
+def create_hotel_from_hotel_management(
+    name: str = Form(...),
+    aliases: str = Form(""),
+    bus_stop_id: str = Form(""),
+    city_id: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _ensure_hotel_management_access(user)
+    _create_hotel_record(db, name=name, aliases=aliases, bus_stop_id=bus_stop_id, city_id=city_id)
+    return RedirectResponse(url="/hotel-management", status_code=303)
 
 
 @router.post("/hotels/{hotel_id}")

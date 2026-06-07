@@ -56,6 +56,7 @@ app.include_router(inbox.router)
 app.include_router(logs.router)
 app.include_router(map_router.router)
 app.include_router(admin.router)
+app.include_router(admin.hotel_management_router)
 app.include_router(presence.router)
 app.include_router(stream.router)
 

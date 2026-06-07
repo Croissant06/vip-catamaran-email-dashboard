@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block header_title %}Hotel Management{% endblock %}
+{% block header_subtitle %}Add and manage hotels and their bus stop assignments{% endblock %}
+{% block content %}
+<div class="max-w-3xl">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
+        <form method="post" action="/hotel-management/hotels" class="space-y-3">
+            <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+            <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
+            <select name="city_id" class="hotel-city-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <option value="">City (required)</option>
+                {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
+            </select>
+            <select name="bus_stop_id" class="hotel-stop-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="">
+                <option value="">Bus stop (optional)</option>
+                {% for stop in bus_stops %}<option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}">{{ stop.name }}</option>{% endfor %}
+            </select>
+            <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Hotel</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterHotelStops(form) {
+    const citySelect = form.querySelector(".hotel-city-select");
+    const stopSelect = form.querySelector(".hotel-stop-select");
+    if (!citySelect || !stopSelect) {
+        return;
+    }
+    const selectedCity = citySelect.value;
+    const selectedStop = stopSelect.dataset.selectedStop || stopSelect.value;
+    for (const option of stopSelect.options) {
+        if (!option.value) {
+            option.hidden = false;
+            continue;
+        }
+        const optionCity = option.dataset.cityId || "";
+        const visible = !selectedCity || optionCity === selectedCity;
+        option.hidden = !visible;
+        if (!visible && option.selected) {
+            option.selected = false;
+        }
+    }
+    if (selectedStop) {
+        const match = Array.from(stopSelect.options).find((option) => option.value === selectedStop && !option.hidden);
+        if (match) {
+            match.selected = true;
+        }
+    }
+}
+
+for (const form of document.querySelectorAll("form")) {
+    const citySelect = form.querySelector(".hotel-city-select");
+    if (!citySelect) {
+        continue;
+    }
+    filterHotelStops(form);
+    citySelect.addEventListener("change", () => {
+        const stopSelect = form.querySelector(".hotel-stop-select");
+        if (stopSelect) {
+            stopSelect.dataset.selectedStop = "";
+        }
+        filterHotelStops(form);
+    });
+}
+</script>
+{% endblock %}
