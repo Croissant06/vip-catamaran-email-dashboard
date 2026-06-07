@@ -44,8 +44,10 @@
                 </a>
                 <a href="/logs" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/logs') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">History &amp; Logs</a>
                 <a href="/map" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/map') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Bus Stop Map</a>
+                {% if current_user.role.value in ['admin', 'staff'] %}
+                <a href="/admin" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path == '/admin' %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">{% if current_user.role.value == 'staff' %}Hotel Management{% else %}Admin Panel{% endif %}</a>
+                {% endif %}
                 {% if current_user.role.value == 'admin' %}
-                <a href="/admin" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path == '/admin' %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Admin Panel</a>
                 <a href="/admin/create-demo-booking" class="flex min-h-11 w-full items-center rounded-md px-3 py-2 {% if active_path.startswith('/admin/create-demo-booking') %}bg-indigo-700{% else %}hover:bg-gray-800{% endif %}">Create Demo Booking</a>
                 {% endif %}
             </nav>
