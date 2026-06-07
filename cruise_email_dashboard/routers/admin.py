@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
-from pathlib import Path
-import subprocess
-import sys
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -15,13 +12,19 @@ from cruise_email_dashboard.database.models import BusStop, City, EmailLog, Emai
 from cruise_email_dashboard.dependencies import get_admin_user, get_current_user, template_context, templates
 from cruise_email_dashboard.services.classifier import _build_label_map, classify_email, parse_booking_email
 from cruise_email_dashboard.services.email_poller import apply_classification_to_email, poll_now, reset_poll_backoff
+from cruise_email_dashboard.services.history_import import (
+    get_history_import_status,
+    historical_import_is_running,
+    queue_historical_import,
+    run_historical_import_job,
+    _replace_history_import_status,
+)
 from cruise_email_dashboard.services.mailbox import mailbox_status
 from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, REPLIES_DIR, available_template_files, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 from cruise_email_dashboard.settings import settings, update_env
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_HISTORY_IMPORT_DATE = "2025-07-01"
 
 DEFAULT_REPLIES_DIR = REPLIES_DIR / "defaults"
@@ -60,6 +63,12 @@ def _ensure_hotel_management_access(user: User) -> User:
     if user.role not in {UserRole.admin, UserRole.staff}:
         raise HTTPException(status_code=403, detail="Hotel management access required.")
     return user
+
+
+def _wants_json_response(request: Request) -> bool:
+    accept = request.headers.get("accept", "").lower()
+    requested_with = request.headers.get("x-requested-with", "").lower()
+    return "application/json" in accept or requested_with == "xmlhttprequest"
 
 
 def _parse_optional_int(value: str) -> int | None:
@@ -171,7 +180,7 @@ def admin_page(request: Request, db: Session = Depends(get_db), user: User = Dep
             settings=settings,
             vehicle_types=list(VehicleType),
             template_placeholders=TEMPLATE_PLACEHOLDERS,
-            history_import_result=request.session.pop("history_import_result", None),
+            history_import_status=get_history_import_status(),
             history_import_default_since=DEFAULT_HISTORY_IMPORT_DATE,
         ),
     )
@@ -338,29 +347,46 @@ def admin_import_history(
     since_date: str = Form(DEFAULT_HISTORY_IMPORT_DATE),
     user: User = Depends(get_admin_user),
 ):
-    script_path = PROJECT_ROOT / "scripts" / "import_all_emails.py"
-    try:
-        completed = subprocess.run(
-            [sys.executable, str(script_path), "--since", since_date],
-            cwd=str(PROJECT_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=1800,
-            check=False,
-        )
-        output = (completed.stdout or completed.stderr or "").strip()
-        request.session["history_import_result"] = {
-            "ok": completed.returncode == 0,
-            "since_date": since_date,
-            "output": output.splitlines()[-8:] if output else ["No output returned."],
-        }
-    except Exception as exc:
-        request.session["history_import_result"] = {
-            "ok": False,
-            "since_date": since_date,
-            "output": [str(exc)],
-        }
+    scheduler = getattr(request.app.state, "scheduler", None)
+    if scheduler is None:
+        raise HTTPException(status_code=503, detail="Scheduler is not available.")
+
+    if historical_import_is_running():
+        status_payload = get_history_import_status()
+        status_code = 409
+    else:
+        queue_historical_import(since_date=since_date)
+        try:
+            scheduler.add_job(
+                run_historical_import_job,
+                "date",
+                run_date=datetime.now(UTC),
+                kwargs={"since_date": since_date},
+                id="historical_import",
+                replace_existing=False,
+                max_instances=1,
+            )
+            status_payload = get_history_import_status()
+            status_code = 202
+        except Exception as exc:
+            status_payload = _replace_history_import_status(
+                {
+                    **get_history_import_status(),
+                    "status": "failed",
+                    "finished_at": datetime.now(UTC).isoformat(),
+                    "message": f"Import failed to start - {exc}",
+                }
+            )
+            status_code = 500
+
+    if _wants_json_response(request):
+        return JSONResponse(status_payload, status_code=status_code)
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.get("/mailbox-status/import-history-status")
+def admin_import_history_status(user: User = Depends(get_admin_user)):
+    return JSONResponse(get_history_import_status())
 
 
 @router.post("/reprocess-all")

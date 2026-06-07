@@ -32,6 +32,7 @@ def cleanup_presence_job() -> None:
 async def lifespan(app: FastAPI):
     init_db()
     scheduler = AsyncIOScheduler()
+    app.state.scheduler = scheduler
     scheduler.add_job(cleanup_presence_job, "interval", minutes=5, id="presence_cleanup", replace_existing=True)
     scheduler.start()
     poller = asyncio.create_task(poll_forever(SessionLocal))
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
         with suppress(asyncio.CancelledError):
             await poller
         scheduler.shutdown(wait=False)
+        app.state.scheduler = None
 
 
 app = FastAPI(title="Cruise Email Dashboard", lifespan=lifespan)

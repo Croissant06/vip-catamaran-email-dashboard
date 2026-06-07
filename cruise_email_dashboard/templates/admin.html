@@ -105,18 +105,13 @@
                 <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
                     <h3 class="font-medium text-gray-800">Fetch Historical Emails</h3>
                     <p class="mt-1 text-xs text-gray-500">Import older mailbox emails starting from a chosen date without changing their read state.</p>
-                    {% if history_import_result %}
-                    <div class="mt-3 rounded-md px-3 py-2 text-xs whitespace-pre-wrap {% if history_import_result.ok %}border border-green-200 bg-green-50 text-green-700{% else %}border border-red-200 bg-red-50 text-red-700{% endif %}">
-                        <div class="font-medium">Import from {{ history_import_result.since_date }}</div>
-                        <div class="mt-1">{{ history_import_result.output | join('\n') }}</div>
-                    </div>
-                    {% endif %}
-                    <form method="post" action="/admin/mailbox-status/import-history" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div id="historyImportStatus" class="mt-3 rounded-md px-3 py-2 text-xs whitespace-pre-wrap"></div>
+                    <form id="historyImportForm" method="post" action="/admin/mailbox-status/import-history" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
                         <label class="flex-1 text-sm text-gray-700">
                             <span class="mb-1 block font-medium">Start date</span>
                             <input type="date" name="since_date" value="{{ history_import_default_since }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </label>
-                        <button type="submit" class="min-h-11 rounded-md bg-slate-700 px-4 py-2 text-sm text-white transition duration-150 hover:bg-slate-800">Fetch Historical Emails</button>
+                        <button id="historyImportSubmit" type="submit" class="min-h-11 rounded-md bg-slate-700 px-4 py-2 text-sm text-white transition duration-150 hover:bg-slate-800">Fetch Historical Emails</button>
                     </form>
                 </div>
             </div>
@@ -313,6 +308,8 @@
 {% block scripts %}
 <script>
 const staffHotelOnly = {{ "true" if staff_hotel_only else "false" }};
+let historyImportStatus = {{ history_import_status | tojson }};
+let historyImportPollInterval = null;
 
 function setStatus(dotId, textId, status, message) {
     const dot = document.getElementById(dotId);
@@ -339,6 +336,107 @@ function setAdminTab(tabName) {
         button.classList.toggle("text-gray-700", !active);
         button.classList.toggle("hover:bg-gray-300", !active);
     });
+}
+
+function historyImportIsActive(status) {
+    return ["queued", "running"].includes(status?.status || "");
+}
+
+function historyImportStatusClasses(status) {
+    if (status?.status === "completed") {
+        return "border border-green-200 bg-green-50 text-green-700";
+    }
+    if (status?.status === "failed") {
+        return "border border-red-200 bg-red-50 text-red-700";
+    }
+    if (historyImportIsActive(status)) {
+        return "border border-amber-200 bg-amber-50 text-amber-700";
+    }
+    return "border border-gray-200 bg-gray-50 text-gray-600";
+}
+
+function renderHistoryImportStatus(status) {
+    historyImportStatus = status || historyImportStatus;
+    const container = document.getElementById("historyImportStatus");
+    const submitButton = document.getElementById("historyImportSubmit");
+    if (!container || !submitButton || !historyImportStatus) {
+        return;
+    }
+
+    container.className = `mt-3 rounded-md px-3 py-2 text-xs whitespace-pre-wrap ${historyImportStatusClasses(historyImportStatus)}`;
+
+    const lines = [];
+    if (historyImportStatus.since_date) {
+        lines.push(`Import from ${historyImportStatus.since_date}`);
+    }
+    lines.push(historyImportStatus.message || "No historical import has been started yet.");
+
+    if (historyImportStatus.total_selected) {
+        lines.push(
+            `Processed ${historyImportStatus.processed || 0}/${historyImportStatus.total_selected} | ` +
+            `${historyImportStatus.imported || 0} new | ` +
+            `${historyImportStatus.skipped_existing || 0} skipped | ` +
+            `${historyImportStatus.failed || 0} failed`
+        );
+    }
+    if (historyImportStatus.status === "completed") {
+        lines.push(
+            `Reprocess improved ${historyImportStatus.improved || 0} | ` +
+            `${historyImportStatus.still_flagged || 0} still flagged | ` +
+            `${historyImportStatus.skipped_sent || 0} sent skipped`
+        );
+    }
+
+    container.textContent = lines.join("\n");
+    submitButton.disabled = historyImportIsActive(historyImportStatus);
+    submitButton.classList.toggle("opacity-60", submitButton.disabled);
+    submitButton.classList.toggle("cursor-not-allowed", submitButton.disabled);
+    submitButton.textContent = historyImportIsActive(historyImportStatus) ? "Import Running..." : "Fetch Historical Emails";
+}
+
+async function refreshHistoryImportStatus() {
+    const response = await fetch("/admin/mailbox-status/import-history-status", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+    });
+    if (!response.ok) {
+        return;
+    }
+    renderHistoryImportStatus(await response.json());
+    syncHistoryImportPolling();
+}
+
+function syncHistoryImportPolling() {
+    if (!historyImportIsActive(historyImportStatus)) {
+        if (historyImportPollInterval) {
+            window.clearInterval(historyImportPollInterval);
+            historyImportPollInterval = null;
+        }
+        return;
+    }
+    if (!historyImportPollInterval) {
+        historyImportPollInterval = window.setInterval(() => {
+            refreshHistoryImportStatus().catch((error) => console.error("Failed to refresh history import status", error));
+        }, 3000);
+    }
+}
+
+async function startHistoryImport(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+        body: formData,
+    });
+    const payload = await response.json();
+    renderHistoryImportStatus(payload);
+    syncHistoryImportPolling();
 }
 
 async function refreshMailboxStatus() {
@@ -449,6 +547,11 @@ document.querySelectorAll("[data-admin-tab-trigger]").forEach((button) => {
 });
 
 if (!staffHotelOnly) {
+    renderHistoryImportStatus(historyImportStatus);
+    document.getElementById("historyImportForm")?.addEventListener("submit", (event) => {
+        startHistoryImport(event).catch((error) => console.error("Failed to start historical import", error));
+    });
+    syncHistoryImportPolling();
     document.getElementById("refreshMailboxStatus")?.addEventListener("click", () => runSingleFlight("refreshMailboxStatus", refreshMailboxStatus));
     document.getElementById("reprocessAllFlagged")?.addEventListener("click", () => runSingleFlight("reprocessAllFlagged", runReprocessAll));
     document.getElementById("runPollNow")?.addEventListener("click", () => runSingleFlight("runPollNow", () => postMailboxAction("/admin/mailbox-status/run-poll")));
@@ -464,5 +567,11 @@ setAdminTab(staffHotelOnly ? "hotels" : (window.localStorage.getItem("adminActiv
 if (!staffHotelOnly) {
     refreshMailboxStatus();
 }
+window.addEventListener("pagehide", () => {
+    if (historyImportPollInterval) {
+        window.clearInterval(historyImportPollInterval);
+        historyImportPollInterval = null;
+    }
+});
 </script>
 {% endblock %}
