@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
+import subprocess
+import sys
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -18,6 +21,8 @@ from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 from cruise_email_dashboard.settings import settings, update_env
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_HISTORY_IMPORT_DATE = "2025-07-01"
 
 DEFAULT_REPLIES_DIR = REPLIES_DIR / "defaults"
 BOOKING_TYPE_CHOICES = ["", "MORNING", "AFTERNOON", "SUNSET", "ANASTASIA", "OBZOR", "POMORIE"]
@@ -159,6 +164,8 @@ def admin_page(request: Request, db: Session = Depends(get_db), user: User = Dep
             settings=settings,
             vehicle_types=list(VehicleType),
             template_placeholders=TEMPLATE_PLACEHOLDERS,
+            history_import_result=request.session.pop("history_import_result", None),
+            history_import_default_since=DEFAULT_HISTORY_IMPORT_DATE,
         ),
     )
 
@@ -316,6 +323,37 @@ async def admin_reset_backoff(user: User = Depends(get_admin_user)):
 @router.post("/mailbox-status/run-poll")
 async def admin_run_poll_now(user: User = Depends(get_admin_user)):
     return JSONResponse(await poll_now(SessionLocal, force=False))
+
+
+@router.post("/mailbox-status/import-history")
+def admin_import_history(
+    request: Request,
+    since_date: str = Form(DEFAULT_HISTORY_IMPORT_DATE),
+    user: User = Depends(get_admin_user),
+):
+    script_path = PROJECT_ROOT / "scripts" / "import_all_emails.py"
+    try:
+        completed = subprocess.run(
+            [sys.executable, str(script_path), "--since", since_date],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=1800,
+            check=False,
+        )
+        output = (completed.stdout or completed.stderr or "").strip()
+        request.session["history_import_result"] = {
+            "ok": completed.returncode == 0,
+            "since_date": since_date,
+            "output": output.splitlines()[-8:] if output else ["No output returned."],
+        }
+    except Exception as exc:
+        request.session["history_import_result"] = {
+            "ok": False,
+            "since_date": since_date,
+            "output": [str(exc)],
+        }
+    return RedirectResponse(url="/admin", status_code=303)
 
 
 @router.post("/reprocess-all")

@@ -2,9 +2,13 @@
 {% block header_title %}Admin Panel{% endblock %}
 {% block header_subtitle %}Manage master data, templates, and mailbox settings{% endblock %}
 {% block content %}
+<div class="mb-6 flex flex-wrap gap-2">
+    <button type="button" data-admin-tab-trigger="general" class="admin-tab-trigger min-h-11 rounded-md bg-indigo-600 px-4 py-2 text-sm text-white transition duration-150 hover:bg-indigo-700">General</button>
+    <button type="button" data-admin-tab-trigger="hotels" class="admin-tab-trigger min-h-11 rounded-md bg-gray-200 px-4 py-2 text-sm text-gray-700 transition duration-150 hover:bg-gray-300">Hotel Management</button>
+</div>
 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
     <div class="space-y-6">
-        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div data-admin-panel="hotels" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
             <form method="post" action="/admin/hotels" class="space-y-3">
                 <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
@@ -21,7 +25,7 @@
                 <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Hotel</button>
             </form>
         </div>
-        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Bus Stop</h2>
             <form method="post" action="/admin/bus-stops" class="space-y-3">
                 <input name="name" placeholder="Stop name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
@@ -44,7 +48,7 @@
                 <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Stop</button>
             </form>
         </div>
-        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Schedule</h2>
             <form method="post" action="/admin/schedules" class="space-y-3">
                 <select name="bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -63,7 +67,7 @@
         </div>
     </div>
     <div class="space-y-6">
-        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <div class="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <h2 class="text-lg font-semibold">Mailbox Status</h2>
                 <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -90,9 +94,26 @@
                     <div><span class="font-medium">Backoff active:</span> <span id="backoffActive">No</span></div>
                     <div><span class="font-medium">Consecutive failures:</span> <span id="consecutiveFailures">0</span></div>
                 </div>
+                <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
+                    <h3 class="font-medium text-gray-800">Fetch Historical Emails</h3>
+                    <p class="mt-1 text-xs text-gray-500">Import older mailbox emails starting from a chosen date without changing their read state.</p>
+                    {% if history_import_result %}
+                    <div class="mt-3 rounded-md px-3 py-2 text-xs whitespace-pre-wrap {% if history_import_result.ok %}border border-green-200 bg-green-50 text-green-700{% else %}border border-red-200 bg-red-50 text-red-700{% endif %}">
+                        <div class="font-medium">Import from {{ history_import_result.since_date }}</div>
+                        <div class="mt-1">{{ history_import_result.output | join('\n') }}</div>
+                    </div>
+                    {% endif %}
+                    <form method="post" action="/admin/mailbox-status/import-history" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <label class="flex-1 text-sm text-gray-700">
+                            <span class="mb-1 block font-medium">Start date</span>
+                            <input type="date" name="since_date" value="{{ history_import_default_since }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </label>
+                        <button type="submit" class="min-h-11 rounded-md bg-slate-700 px-4 py-2 text-sm text-white transition duration-150 hover:bg-slate-800">Fetch Historical Emails</button>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-semibold">Reply Templates</h2>
@@ -127,7 +148,7 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Settings</h2>
             <form method="post" action="/admin/settings" class="space-y-3">
                 <input name="imap_host" value="{{ settings.imap_host }}" placeholder="IMAP host" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -180,7 +201,7 @@
     </div>
 </div>
 <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+    <div data-admin-panel="hotels" class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Hotels</h2>
         <div class="space-y-2 overflow-x-auto text-sm">
             {% for hotel in hotels %}
@@ -208,7 +229,7 @@
             {% endfor %}
         </div>
     </div>
-    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+    <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Bus Stops</h2>
         <div class="space-y-2 overflow-x-auto text-sm">
             {% for stop in bus_stops %}
@@ -240,7 +261,7 @@
             {% endfor %}
         </div>
     </div>
-    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+    <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
         <h2 class="mb-3 text-lg font-semibold">Schedules</h2>
         <div class="space-y-2 overflow-x-auto text-sm">
             {% for schedule in schedules %}
@@ -283,6 +304,23 @@ function setStatus(dotId, textId, status, message) {
     const text = document.getElementById(textId);
     dot.className = `h-3 w-3 rounded-full ${status === "ok" ? "bg-green-500" : status === "pending" ? "bg-yellow-500" : "bg-red-500"}`;
     text.textContent = message;
+}
+
+function setAdminTab(tabName) {
+    const validTab = tabName === "hotels" ? "hotels" : "general";
+    window.localStorage.setItem("adminActiveTab", validTab);
+    document.querySelectorAll("[data-admin-panel]").forEach((panel) => {
+        panel.classList.toggle("hidden", panel.dataset.adminPanel !== validTab);
+    });
+    document.querySelectorAll("[data-admin-tab-trigger]").forEach((button) => {
+        const active = button.dataset.adminTabTrigger === validTab;
+        button.classList.toggle("bg-indigo-600", active);
+        button.classList.toggle("text-white", active);
+        button.classList.toggle("hover:bg-indigo-700", active);
+        button.classList.toggle("bg-gray-200", !active);
+        button.classList.toggle("text-gray-700", !active);
+        button.classList.toggle("hover:bg-gray-300", !active);
+    });
 }
 
 async function refreshMailboxStatus() {
@@ -388,6 +426,10 @@ for (const form of document.querySelectorAll("form")) {
     });
 }
 
+document.querySelectorAll("[data-admin-tab-trigger]").forEach((button) => {
+    button.addEventListener("click", () => setAdminTab(button.dataset.adminTabTrigger));
+});
+
 document.getElementById("refreshMailboxStatus")?.addEventListener("click", () => runSingleFlight("refreshMailboxStatus", refreshMailboxStatus));
 document.getElementById("reprocessAllFlagged")?.addEventListener("click", () => runSingleFlight("reprocessAllFlagged", runReprocessAll));
 document.getElementById("runPollNow")?.addEventListener("click", () => runSingleFlight("runPollNow", () => postMailboxAction("/admin/mailbox-status/run-poll")));
@@ -398,6 +440,7 @@ document.getElementById("reprocessModal")?.addEventListener("click", (event) => 
         hideReprocessModal();
     }
 });
+setAdminTab(window.localStorage.getItem("adminActiveTab") || "general");
 refreshMailboxStatus();
 </script>
 {% endblock %}

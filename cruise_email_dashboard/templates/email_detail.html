@@ -194,6 +194,11 @@
             </form>
         </div>
         {% endif %}
+        {% if not email.is_new %}
+        <form method="post" action="/inbox/{{ email.id }}/mark-unread">
+            <button type="submit" class="min-h-11 w-full rounded-md bg-slate-700 px-4 py-2 text-white transition duration-150 hover:bg-slate-800 sm:w-auto">Mark as Unread</button>
+        </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

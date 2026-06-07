@@ -2,7 +2,7 @@ Caro/a {customer_name},
 
 La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, {booking_type}, per {num_adults}.
 
-Vorremmo offrirle un punto di prelievo piu vicino a {hotel_name}.
+{pickup_adjustment_paragraph}
 
 Di seguito trova il link al punto di prelievo. Si tratta di {bus_stop_description}. Il nostro grande autobus rosso a due piani stile Londra sara li alle {pickup_time} per venirla a prendere.
 

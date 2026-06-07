@@ -181,6 +181,14 @@ def apply_classification_to_email(
         email_log.status = _choose_status(old_status, EmailStatus.cancelled, improvement_only)
         return old_status, email_log.status
 
+    if classification.extraction_source == "old_nessebar_port":
+        email_log.detected_hotel = classification.matched_hotel
+        email_log.assigned_bus_stop = None
+        email_log.pickup_time_text = ""
+        email_log.status = _choose_status(old_status, EmailStatus.pending, improvement_only)
+        regenerate_email_draft(email_log)
+        return old_status, email_log.status
+
     if not classification.is_bus_request:
         email_log.detected_hotel = None
         email_log.assigned_bus_stop = None

@@ -22,6 +22,13 @@ BOOKING_TRIGGER = "you have just received a new booking!"
 BOOKEO_TRIGGER = "powered by bookeo"
 PERSONAL_EMAIL_DOMAINS = {"gmail.com", "hotmail.com", "yahoo.com", "outlook.com"}
 PAYMENT_KEYWORDS = ("paid", "payment", "pay", "invoice", "receipt", "confirmation")
+OLD_NESSEBAR_PORT_HINTS = (
+    "passenger terminal",
+    "old nessebar port",
+    "old nesebar port",
+    "passenger terminal old nessebar",
+    "passenger terminal old nesebar",
+)
 BUS_KEYWORDS = {
     "bus",
     "pickup",
@@ -553,6 +560,13 @@ def _extract_time_from_stop_field(bus_stop_field: str) -> str:
     if not match:
         return ""
     return f"{int(match.group(1)):02d}:{match.group(2)}"
+
+
+def _is_old_nessebar_port_choice(bus_stop_field: str) -> bool:
+    normalized = _normalize_token(bus_stop_field)
+    if not normalized:
+        return False
+    return any(_normalize_token(hint) in normalized for hint in OLD_NESSEBAR_PORT_HINTS)
 
 
 def _normalize_plus_code(code: str) -> str:
@@ -1205,7 +1219,8 @@ def classify_email(
         threshold=threshold,
         city=city,
     ) if bus_request else (None, 0.0, "")
-    if bus_request and not matched_stop and not PLUS_CODE_PATTERN.fullmatch(normalized_raw_hotel):
+    hotel, score = None, 0.0
+    if bus_request and not PLUS_CODE_PATTERN.fullmatch(normalized_raw_hotel):
         hotel, score = extract_hotel(
             db,
             body=body,
@@ -1213,8 +1228,36 @@ def classify_email(
             city=city,
             raw_hotel_name=booking.raw_hotel_extraction,
         )
-    else:
-        hotel, score = None, 0.0
+
+    if booking.booking_type == "OBZOR" and _is_old_nessebar_port_choice(booking.bus_stop_field):
+        warning_note = booking.warning_note.strip()
+        return ClassificationResult(
+            language=language,
+            matched_hotel=hotel,
+            matched_bus_stop=None,
+            score=max(score, stop_score),
+            is_bus_request=True,
+            is_booking_email=booking_email,
+            booking_type=booking.booking_type,
+            cruise_date=booking.cruise_date,
+            cruise_time=booking.cruise_time,
+            num_adults=booking.num_adults,
+            num_children=booking.num_children,
+            booking_number=booking.booking_number,
+            total_price=booking.total_price,
+            customer_name=booking.customer_name or fallback_name or "Guest",
+            customer_email=booking.customer_email or fallback_sender,
+            customer_phone=booking.customer_phone,
+            raw_customer_name_extraction=booking.raw_customer_name_extraction,
+            raw_hotel_extraction=booking.raw_hotel_extraction,
+            extraction_source="old_nessebar_port",
+            city=city,
+            detected_city_name=city.name if city else booking.city_name,
+            gyg_ref=booking.gyg_ref,
+            warning_note=warning_note,
+            resolved_status=EmailStatus.pending,
+            selected_stop_time_text=selected_stop_time_text,
+        )
 
     warning_parts = [booking.warning_note] if booking.warning_note else []
     extraction_source = booking.extraction_source
@@ -1229,7 +1272,6 @@ def classify_email(
         if plus_code_warning:
             warning_parts.append(plus_code_warning)
     if matched_stop and extraction_source != "plus_code_resolved":
-        hotel = None
         score = max(score, stop_score)
         extraction_source = "customer_selected_stop"
     special_flag = COMMERCIAL_VENUE_FLAGS.get(_normalize_token(booking.raw_hotel_extraction))

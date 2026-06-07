@@ -2,7 +2,7 @@ Cher/Chere {customer_name},
 
 Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {booking_type}, pour {num_adults}.
 
-Nous souhaitons vous proposer une prise en charge depuis un point plus proche de {hotel_name}.
+{pickup_adjustment_paragraph}
 
 Veuillez trouver ci-dessous le lien vers le point de prise en charge. Il s'agit de {bus_stop_description}. Notre grand bus rouge a deux etages de style londonien sera la a {pickup_time} pour vous recuperer.
 

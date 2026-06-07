@@ -185,6 +185,15 @@ def flag_manual(email_id: int, db: Session = Depends(get_db), user: User = Depen
     return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
 
 
+@router.post("/{email_id}/mark-unread")
+def mark_email_unread(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
+    if email:
+        email.is_new = True
+        db.commit()
+    return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+
+
 @router.post("/{email_id}/reassign")
 def reassign_email(
     email_id: int,
@@ -197,6 +206,7 @@ def reassign_email(
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email.status == EmailStatus.cancelled:
         return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    existing_draft_reply = email.draft_reply or ""
     email.detected_hotel = db.query(Hotel).filter(Hotel.id == detected_hotel_id).first()
     email.assigned_bus_stop = db.query(BusStop).filter(BusStop.id == assigned_bus_stop_id).first()
     schedule_resolution = resolve_pickup_schedule(db, email.assigned_bus_stop, email.booking_type, email.cruise_date)
@@ -207,7 +217,7 @@ def reassign_email(
     )
     email.warning_note = schedule_resolution.warning_note
     regenerate_email_draft(email)
-    if draft_reply.strip():
+    if draft_reply.strip() and draft_reply.strip() != existing_draft_reply.strip():
         email.draft_reply = draft_reply
     email.status = EmailStatus.pending
     db.commit()

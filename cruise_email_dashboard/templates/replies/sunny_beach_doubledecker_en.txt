@@ -2,7 +2,7 @@ Dear {customer_name},
 
 We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, for {num_adults}!
 
-We would like to offer to pick you up from a pickup point closer to {hotel_name}.
+{pickup_adjustment_paragraph}
 
 Please find attached a link to the pickup point. It is {bus_stop_description}. Our big red London double-decker bus will be there at {pickup_time} to collect you.
 
