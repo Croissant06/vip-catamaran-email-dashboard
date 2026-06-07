@@ -7,6 +7,16 @@ from cruise_email_dashboard.services.poll_state import load_poll_state
 from cruise_email_dashboard.settings import settings
 
 
+def _open_smtp_connection() -> smtplib.SMTP:
+    if settings.smtp_use_starttls:
+        server = smtplib.SMTP(settings.smtp_server, settings.smtp_port, timeout=settings.mail_timeout_seconds)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        return server
+    return smtplib.SMTP_SSL(settings.smtp_server, settings.smtp_port, timeout=settings.mail_timeout_seconds)
+
+
 def mailbox_status() -> dict[str, str | int | bool | None]:
     imap_status = "error"
     smtp_status = "error"
@@ -28,7 +38,7 @@ def mailbox_status() -> dict[str, str | int | bool | None]:
         imap_message = str(exc)
 
     try:
-        server = smtplib.SMTP_SSL(settings.smtp_server, settings.smtp_port, timeout=settings.mail_timeout_seconds)
+        server = _open_smtp_connection()
         try:
             server.login(settings.smtp_user, settings.smtp_password)
             code, response = server.noop()

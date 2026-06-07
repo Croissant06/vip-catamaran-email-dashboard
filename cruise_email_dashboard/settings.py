@@ -25,6 +25,7 @@ class Settings:
     imap_password: str = field(default_factory=lambda: os.getenv("IMAP_PASSWORD", ""))
     smtp_host: str = field(default_factory=lambda: os.getenv("SMTP_HOST", "mail.vipcatamaran.com"))
     smtp_port: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "465")))
+    smtp_use_starttls: bool = field(default_factory=lambda: _env_bool("SMTP_USE_STARTTLS", "false"))
     smtp_user: str = field(default_factory=lambda: os.getenv("SMTP_USER", "bookings@vipcatamaran.com"))
     smtp_password: str = field(default_factory=lambda: os.getenv("SMTP_PASSWORD", ""))
     poll_interval_minutes: int = field(default_factory=lambda: int(os.getenv("POLL_INTERVAL_MINUTES", "5")))

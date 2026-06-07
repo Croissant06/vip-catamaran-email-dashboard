@@ -21,6 +21,16 @@ def _recipient_for_email(email_log: EmailLog) -> str:
     return email_log.sender_email
 
 
+def _open_smtp_connection() -> smtplib.SMTP:
+    if settings.smtp_use_starttls:
+        server = smtplib.SMTP(settings.smtp_server, settings.smtp_port, timeout=settings.mail_timeout_seconds)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        return server
+    return smtplib.SMTP_SSL(settings.smtp_server, settings.smtp_port, timeout=settings.mail_timeout_seconds)
+
+
 def _decode_smtp_response(value: bytes | str | None) -> str:
     if value is None:
         return ""
@@ -102,7 +112,7 @@ def send_reply(email_log: EmailLog) -> None:
     for attempt in range(1, MAX_SEND_ATTEMPTS + 1):
         server = None
         try:
-            server = smtplib.SMTP_SSL(settings.smtp_server, settings.smtp_port, timeout=settings.mail_timeout_seconds)
+            server = _open_smtp_connection()
             server.login(settings.smtp_user, settings.smtp_password)
             server.send_message(msg)
             email_log.send_error = ""
