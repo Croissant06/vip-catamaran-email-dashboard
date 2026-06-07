@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block header_title %}Admin Panel{% endblock %}
-{% block header_subtitle %}Manage master data, templates, and mailbox settings{% endblock %}
+{% block header_title %}{% if current_user.role.value == "staff" %}Hotel Management{% else %}Admin Panel{% endif %}{% endblock %}
+{% block header_subtitle %}{% if current_user.role.value == "staff" %}Add and manage hotels and their bus stop assignments{% else %}Manage master data, templates, and mailbox settings{% endif %}{% endblock %}
 {% block content %}
 {% set staff_hotel_only = current_user.role.value == "staff" %}
 <div class="mb-6 flex flex-wrap gap-2">
@@ -546,6 +546,8 @@ document.querySelectorAll("[data-admin-tab-trigger]").forEach((button) => {
     button.addEventListener("click", () => setAdminTab(button.dataset.adminTabTrigger));
 });
 
+setAdminTab(staffHotelOnly ? "hotels" : (window.localStorage.getItem("adminActiveTab") || "general"));
+
 if (!staffHotelOnly) {
     renderHistoryImportStatus(historyImportStatus);
     document.getElementById("historyImportForm")?.addEventListener("submit", (event) => {
@@ -563,7 +565,6 @@ if (!staffHotelOnly) {
         }
     });
 }
-setAdminTab(staffHotelOnly ? "hotels" : (window.localStorage.getItem("adminActiveTab") || "general"));
 if (!staffHotelOnly) {
     refreshMailboxStatus();
 }
