@@ -19,6 +19,13 @@ from cruise_email_dashboard.services.history_import import (
     run_historical_import_job,
     _replace_history_import_status,
 )
+from cruise_email_dashboard.services.hotel_reprocess import (
+    get_hotel_reprocess_status,
+    hotel_reprocess_is_running,
+    queue_hotel_reprocess,
+    reprocess_flagged_emails,
+    run_hotel_reprocess_job,
+)
 from cruise_email_dashboard.services.mailbox import mailbox_status
 from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, REPLIES_DIR, available_template_files, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
@@ -177,43 +184,54 @@ def _create_hotel_record(db: Session, name: str, aliases: str, bus_stop_id: str,
 
 
 def _reprocess_flagged_emails(db: Session) -> dict[str, int]:
+    summary = reprocess_flagged_emails()
     total = db.query(EmailLog).count()
     skipped_sent = db.query(EmailLog).filter(EmailLog.status == EmailStatus.sent).count()
-    targets = (
+    still_flagged = (
         db.query(EmailLog)
-        .filter(EmailLog.status.in_([EmailStatus.flagged, EmailStatus.pending]))
-        .order_by(EmailLog.id.asc())
-        .all()
+        .filter(EmailLog.status == EmailStatus.flagged)
+        .count()
     )
-
-    improved = 0
-    still_flagged = 0
-    for email in targets:
-        old_status = email.status
-        html_body = email.html_body or ""
-        text_body = email.full_body or ""
-        classified = classify_email(
-            db,
-            subject=email.subject or "",
-            body=text_body,
-            threshold=settings.fuzzy_match_threshold,
-            html_body=html_body,
-            fallback_sender=email.sender_email or "",
-            fallback_name=email.sender_name or "",
-        )
-        _, new_status = apply_classification_to_email(db, email, classified, improvement_only=False)
-        if old_status != new_status:
-            improved += 1
-        if new_status == EmailStatus.flagged:
-            still_flagged += 1
-        print(f"[REPROCESS] id={email.id} - {old_status.value} -> {new_status.value} - {classified.extraction_source}")
-
-    db.commit()
     return {
         "total": total,
-        "improved": improved,
+        "improved": summary["updated"],
         "still_flagged": still_flagged,
         "skipped_sent": skipped_sent,
+    }
+
+
+def _serialize_hotel(hotel: Hotel) -> dict[str, str | int | None]:
+    return {
+        "id": hotel.id,
+        "name": hotel.name,
+        "aliases": hotel.aliases or "",
+        "city_id": hotel.city_id,
+        "city_name": hotel.city.name if hotel.city else "",
+        "bus_stop_id": hotel.bus_stop_id,
+        "bus_stop_name": hotel.bus_stop.name if hotel.bus_stop else "",
+    }
+
+
+def _hotels_for_management(db: Session) -> list[Hotel]:
+    hotels = db.query(Hotel).order_by(Hotel.name.asc()).all()
+    return sorted(
+        hotels,
+        key=lambda hotel: (
+            _city_sort_key(hotel.city) if hotel.city else (99, ""),
+            (hotel.name or "").lower(),
+        ),
+    )
+
+
+def _hotel_management_payload(db: Session) -> dict[str, list[dict[str, str | int | None]]]:
+    return {"hotels": [_serialize_hotel(hotel) for hotel in _hotels_for_management(db)]}
+
+
+def _serialize_bus_stop(stop: BusStop) -> dict[str, str | int | None]:
+    return {
+        "id": stop.id,
+        "name": stop.name,
+        "city_id": stop.city_id,
     }
 
 
@@ -249,14 +267,61 @@ def hotel_management_page(request: Request, db: Session = Depends(get_db), user:
             user=user,
             cities=_ui_cities_with_stops(db),
             bus_stops=db.query(BusStop).order_by(BusStop.name).all(),
+            bus_stops_payload=[_serialize_bus_stop(stop) for stop in db.query(BusStop).order_by(BusStop.name).all()],
+            hotels=_hotels_for_management(db),
+            hotels_payload=_hotel_management_payload(db)["hotels"],
+            hotel_reprocess_status=get_hotel_reprocess_status(),
         ),
     )
 
 
 @hotel_management_router.post("/hotel-management/reprocess-flagged")
-def hotel_management_reprocess_flagged(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def hotel_management_reprocess_flagged(request: Request, user: User = Depends(get_current_user)):
     _ensure_hotel_management_access(user)
-    return JSONResponse(_reprocess_flagged_emails(db))
+    scheduler = getattr(request.app.state, "scheduler", None)
+    if scheduler is None:
+        raise HTTPException(status_code=503, detail="Scheduler is not available.")
+
+    if hotel_reprocess_is_running():
+        payload = get_hotel_reprocess_status()
+        status_code = 409
+    else:
+        payload = queue_hotel_reprocess()
+        try:
+            scheduler.add_job(
+                run_hotel_reprocess_job,
+                "date",
+                run_date=datetime.now(UTC),
+                id="hotel_management_reprocess",
+                replace_existing=False,
+                max_instances=1,
+            )
+            payload = get_hotel_reprocess_status()
+            status_code = 202
+        except Exception as exc:
+            payload = {
+                **get_hotel_reprocess_status(),
+                "status": "failed",
+                "finished_at": datetime.now(UTC).isoformat(),
+                "message": f"Reprocessing failed to start - {exc}",
+            }
+            status_code = 500
+
+    if _wants_json_response(request):
+        return JSONResponse(payload, status_code=status_code)
+    return RedirectResponse(url="/hotel-management", status_code=303)
+
+
+@hotel_management_router.get("/hotel-management/reprocess-flagged-status")
+def hotel_management_reprocess_flagged_status(user: User = Depends(get_current_user)):
+    _ensure_hotel_management_access(user)
+    return JSONResponse(get_hotel_reprocess_status())
+
+
+@hotel_management_router.get("/hotel-management/hotels")
+def hotel_management_hotels(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    _ensure_hotel_management_access(user)
+    return JSONResponse(_hotel_management_payload(db))
 
 
 @router.get("/create-demo-booking")
@@ -483,6 +548,7 @@ def create_hotel(
 
 @hotel_management_router.post("/hotel-management/hotels")
 def create_hotel_from_hotel_management(
+    request: Request,
     name: str = Form(...),
     aliases: str = Form(""),
     bus_stop_id: str = Form(""),
@@ -491,7 +557,52 @@ def create_hotel_from_hotel_management(
     user: User = Depends(get_current_user),
 ):
     _ensure_hotel_management_access(user)
-    _create_hotel_record(db, name=name, aliases=aliases, bus_stop_id=bus_stop_id, city_id=city_id)
+    hotel = _create_hotel_record(db, name=name, aliases=aliases, bus_stop_id=bus_stop_id, city_id=city_id)
+    db.refresh(hotel)
+    if _wants_json_response(request):
+        return JSONResponse({"ok": True, "hotel": _serialize_hotel(hotel), **_hotel_management_payload(db)})
+    return RedirectResponse(url="/hotel-management", status_code=303)
+
+
+@hotel_management_router.post("/hotel-management/hotels/{hotel_id}/bus-stop")
+def update_hotel_bus_stop_from_hotel_management(
+    request: Request,
+    hotel_id: int,
+    bus_stop_id: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _ensure_hotel_management_access(user)
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if hotel is None:
+        raise HTTPException(status_code=404, detail="Hotel not found.")
+
+    parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
+    bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
+    hotel.bus_stop_id = parsed_bus_stop_id
+    if bus_stop is not None:
+        hotel.city_id = bus_stop.city_id
+    db.commit()
+    db.refresh(hotel)
+    if _wants_json_response(request):
+        return JSONResponse({"ok": True, "hotel": _serialize_hotel(hotel), **_hotel_management_payload(db)})
+    return RedirectResponse(url="/hotel-management", status_code=303)
+
+
+@hotel_management_router.post("/hotel-management/hotels/{hotel_id}/delete")
+def delete_hotel_from_hotel_management(
+    request: Request,
+    hotel_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _ensure_hotel_management_access(user)
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if hotel is not None:
+        db.delete(hotel)
+        db.commit()
+    if _wants_json_response(request):
+        return JSONResponse({"ok": True, **_hotel_management_payload(db)})
     return RedirectResponse(url="/hotel-management", status_code=303)
 
 

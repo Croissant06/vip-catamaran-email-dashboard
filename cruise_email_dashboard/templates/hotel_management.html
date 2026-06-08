@@ -2,71 +2,309 @@
 {% block header_title %}Hotel Management{% endblock %}
 {% block header_subtitle %}Add and manage hotels and their bus stop assignments{% endblock %}
 {% block content %}
-<div class="max-w-3xl">
-    <div class="mb-6 rounded-xl bg-white p-4 shadow sm:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+<div class="space-y-6">
+    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="space-y-1">
                 <h2 class="text-lg font-semibold">Reprocess Flagged Emails</h2>
                 <p class="text-sm text-gray-600">If you just added a new hotel and want the system to re-match previously flagged emails, click this button.</p>
             </div>
             <button id="reprocessFlaggedEmails" type="button" class="min-h-11 rounded-md bg-slate-700 px-4 py-2 text-sm text-white transition duration-150 hover:bg-slate-800">Reprocess Flagged Emails</button>
         </div>
-        <div id="reprocessResult" class="mt-4 hidden rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 whitespace-pre-wrap"></div>
+        <div id="reprocessResult" class="mt-4 hidden rounded-md border px-4 py-3 text-sm whitespace-pre-wrap"></div>
     </div>
-    <div class="rounded-xl bg-white p-4 shadow sm:p-6">
-        <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
-        <form method="post" action="/hotel-management/hotels" class="space-y-3">
-            <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-            <p class="text-xs text-gray-500">Enter the hotel name exactly as customers write it in their bookings. Add common variations in the Aliases field, for example Helena Park, Helena, The Helena. The system uses these names to automatically assign the correct pickup stop.</p>
-            <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-            <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
-            <select name="city_id" class="hotel-city-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <option value="">City (required)</option>
-                {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
-            </select>
-            <select name="bus_stop_id" class="hotel-stop-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="">
-                <option value="">Bus stop (optional)</option>
-                {% for stop in bus_stops %}<option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}">{{ stop.name }}</option>{% endfor %}
-            </select>
-            <button class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Hotel</button>
-        </form>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+            <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
+            <form id="addHotelForm" method="post" action="/hotel-management/hotels" class="space-y-3">
+                <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <p class="text-xs text-gray-500">Enter the hotel name exactly as customers write it in their bookings. Add common variations in the Aliases field, for example Helena Park, Helena, The Helena. The system uses these names to automatically assign the correct pickup stop.</p>
+                <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
+                <select name="city_id" class="hotel-city-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <option value="">City (required)</option>
+                    {% for city in cities %}<option value="{{ city.id }}">{{ city.name }}</option>{% endfor %}
+                </select>
+                <select name="bus_stop_id" class="hotel-stop-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-selected-stop="">
+                    <option value="">Bus stop (optional)</option>
+                    {% for stop in bus_stops %}<option value="{{ stop.id }}" data-city-id="{{ stop.city_id or '' }}">{{ stop.name }}</option>{% endfor %}
+                </select>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <button id="saveHotelButton" class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Save Hotel</button>
+                    <p id="addHotelMessage" class="hidden text-sm"></p>
+                </div>
+            </form>
+        </div>
+
+        <div class="rounded-xl bg-white p-4 shadow sm:p-6">
+            <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold">Existing Hotels</h2>
+                    <p class="text-sm text-gray-600">Sorted by city and hotel name. Edit bus stop assignments or remove hotels without leaving the page.</p>
+                </div>
+                <p id="hotelTableMessage" class="hidden text-sm"></p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-xs md:text-sm">
+                    <thead class="bg-gray-50 text-left text-gray-600">
+                        <tr>
+                            <th class="px-3 py-3 font-medium">Hotel</th>
+                            <th class="px-3 py-3 font-medium">City</th>
+                            <th class="px-3 py-3 font-medium">Assigned Bus Stop</th>
+                            <th class="px-3 py-3 font-medium text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hotelTableBody" class="divide-y divide-gray-100 bg-white">
+                        {% for hotel in hotels %}
+                        <tr data-hotel-id="{{ hotel.id }}">
+                            <td class="px-3 py-3 align-top">
+                                <div class="font-medium text-gray-900">{{ hotel.name }}</div>
+                                <div class="text-xs text-gray-500">{{ hotel.aliases or "No aliases" }}</div>
+                            </td>
+                            <td class="px-3 py-3 align-top text-gray-700">{{ hotel.city.name if hotel.city else "Unassigned" }}</td>
+                            <td class="px-3 py-3 align-top text-gray-700">{{ hotel.bus_stop.name if hotel.bus_stop else "No default stop" }}</td>
+                            <td class="px-3 py-3 align-top text-right">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" class="edit-hotel-btn min-h-11 rounded-md border border-indigo-200 px-3 py-2 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50">Edit</button>
+                                    <button type="button" class="delete-hotel-btn min-h-11 rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-function renderReprocessResult(payload) {
+const hotelManagementBusStops = {{ bus_stops_payload | tojson }};
+const initialHotels = {{ hotels_payload | tojson }};
+const initialReprocessStatus = {{ hotel_reprocess_status | tojson }};
+let hotelTableData = [];
+let hotelReprocessTimer = null;
+
+function setMessage(elementId, text, tone = "neutral") {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        return;
+    }
+    if (!text) {
+        element.className = "hidden text-sm";
+        element.textContent = "";
+        return;
+    }
+    const toneClasses = {
+        success: "text-green-700",
+        error: "text-red-700",
+        info: "text-slate-700",
+    };
+    element.className = `text-sm ${toneClasses[tone] || toneClasses.info}`;
+    element.textContent = text;
+}
+
+function stopOptionsHtml(selectedStopId) {
+    const options = ['<option value="">No default stop</option>'];
+    for (const stop of hotelManagementBusStops) {
+        const selected = String(stop.id) === String(selectedStopId) ? " selected" : "";
+        options.push(`<option value="${stop.id}"${selected}>${stop.name}</option>`);
+    }
+    return options.join("");
+}
+
+function hotelRowHtml(hotel) {
+    return `
+        <tr data-hotel-id="${hotel.id}">
+            <td class="px-3 py-3 align-top">
+                <div class="font-medium text-gray-900">${hotel.name}</div>
+                <div class="text-xs text-gray-500">${hotel.aliases || "No aliases"}</div>
+            </td>
+            <td class="px-3 py-3 align-top text-gray-700">${hotel.city_name || "Unassigned"}</td>
+            <td class="px-3 py-3 align-top text-gray-700">${hotel.bus_stop_name || "No default stop"}</td>
+            <td class="px-3 py-3 align-top text-right">
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="edit-hotel-btn min-h-11 rounded-md border border-indigo-200 px-3 py-2 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50">Edit</button>
+                    <button type="button" class="delete-hotel-btn min-h-11 rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50">Delete</button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function renderHotels(hotels) {
+    hotelTableData = Array.isArray(hotels) ? hotels : [];
+    const tableBody = document.getElementById("hotelTableBody");
+    if (!tableBody) {
+        return;
+    }
+    if (!hotelTableData.length) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="px-3 py-6 text-center text-sm text-gray-500">No hotels saved yet.</td>
+            </tr>
+        `;
+        return;
+    }
+    tableBody.innerHTML = hotelTableData.map(hotelRowHtml).join("");
+}
+
+function renderReprocessStatus(payload) {
     const result = document.getElementById("reprocessResult");
     if (!result) {
         return;
     }
     result.classList.remove("hidden");
+    const status = payload?.status || "idle";
+    const tones = {
+        completed: "border-green-200 bg-green-50 text-green-800",
+        failed: "border-red-200 bg-red-50 text-red-800",
+        queued: "border-amber-200 bg-amber-50 text-amber-800",
+        running: "border-amber-200 bg-amber-50 text-amber-800",
+        idle: "border-slate-200 bg-slate-50 text-slate-700",
+    };
+    result.className = `mt-4 rounded-md border px-4 py-3 text-sm whitespace-pre-wrap ${tones[status] || tones.idle}`;
     result.textContent =
-        `Total emails: ${payload.total ?? 0}\n` +
-        `Improved: ${payload.improved ?? 0}\n` +
-        `Still flagged: ${payload.still_flagged ?? 0}\n` +
-        `Sent skipped: ${payload.skipped_sent ?? 0}`;
+        `${payload?.message || "No reprocessing job has been started yet."}\n` +
+        `Processed: ${payload?.processed ?? 0} / ${payload?.total_selected ?? 0}\n` +
+        `Updated: ${payload?.updated ?? 0}\n` +
+        `Failed: ${payload?.failed ?? 0}`;
 }
 
-async function runReprocessFlagged(button) {
-    if (!button || button.dataset.busy === "true") {
-        return;
+async function loadHotels() {
+    const response = await fetch("/hotel-management/hotels", {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+    });
+    const payload = await response.json();
+    renderHotels(payload.hotels || []);
+    return payload;
+}
+
+async function createHotelInline(form) {
+    const saveButton = document.getElementById("saveHotelButton");
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.classList.add("opacity-60", "cursor-not-allowed");
     }
-    button.dataset.busy = "true";
-    button.disabled = true;
-    button.classList.add("opacity-60", "cursor-not-allowed");
     try {
-        const response = await fetch("/hotel-management/reprocess-flagged", {
+        const response = await fetch(form.action, {
             method: "POST",
             credentials: "same-origin",
-            headers: { Accept: "application/json" },
+            headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+            body: new FormData(form),
         });
         const payload = await response.json();
-        renderReprocessResult(payload);
+        if (!response.ok) {
+            throw new Error(payload.detail || "Failed to save hotel.");
+        }
+        renderHotels(payload.hotels || []);
+        setMessage("addHotelMessage", `Saved ${payload.hotel?.name || "hotel"}.`, "success");
+        form.reset();
+        const stopSelect = form.querySelector(".hotel-stop-select");
+        if (stopSelect) {
+            stopSelect.dataset.selectedStop = "";
+        }
+        filterHotelStops(form);
+    } catch (error) {
+        setMessage("addHotelMessage", error.message || "Failed to save hotel.", "error");
     } finally {
-        button.dataset.busy = "false";
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.classList.remove("opacity-60", "cursor-not-allowed");
+        }
+    }
+}
+
+function startInlineEdit(button) {
+    const row = button.closest("tr[data-hotel-id]");
+    if (!row) {
+        return;
+    }
+    const hotelId = row.dataset.hotelId;
+    const hotel = hotelTableData.find((item) => String(item.id) === String(hotelId));
+    if (!hotel) {
+        return;
+    }
+    row.innerHTML = `
+        <td class="px-3 py-3 align-top">
+            <div class="font-medium text-gray-900">${hotel.name}</div>
+            <div class="text-xs text-gray-500">${hotel.aliases || "No aliases"}</div>
+        </td>
+        <td class="px-3 py-3 align-top text-gray-700">${hotel.city_name || "Unassigned"}</td>
+        <td class="px-3 py-3 align-top">
+            <select class="inline-bus-stop-select min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                ${stopOptionsHtml(hotel.bus_stop_id)}
+            </select>
+        </td>
+        <td class="px-3 py-3 align-top text-right">
+            <div class="flex justify-end gap-2">
+                <button type="button" class="save-inline-edit min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-indigo-700">Save</button>
+                <button type="button" class="cancel-inline-edit min-h-11 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">Cancel</button>
+            </div>
+        </td>
+    `;
+}
+
+async function saveInlineEdit(button) {
+    const row = button.closest("tr[data-hotel-id]");
+    if (!row) {
+        return;
+    }
+    const select = row.querySelector(".inline-bus-stop-select");
+    const hotelId = row.dataset.hotelId;
+    button.disabled = true;
+    try {
+        const formData = new FormData();
+        formData.append("bus_stop_id", select?.value || "");
+        const response = await fetch(`/hotel-management/hotels/${hotelId}/bus-stop`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+            body: formData,
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.detail || "Failed to update bus stop.");
+        }
+        renderHotels(payload.hotels || []);
+        setMessage("hotelTableMessage", `Updated ${payload.hotel?.name || "hotel"}.`, "success");
+    } catch (error) {
+        setMessage("hotelTableMessage", error.message || "Failed to update hotel.", "error");
+    } finally {
         button.disabled = false;
-        button.classList.remove("opacity-60", "cursor-not-allowed");
+    }
+}
+
+async function deleteHotel(button) {
+    const row = button.closest("tr[data-hotel-id]");
+    if (!row) {
+        return;
+    }
+    const hotelId = row.dataset.hotelId;
+    const hotel = hotelTableData.find((item) => String(item.id) === String(hotelId));
+    if (!confirm(`Delete ${hotel?.name || "this hotel"}?`)) {
+        return;
+    }
+    button.disabled = true;
+    try {
+        const response = await fetch(`/hotel-management/hotels/${hotelId}/delete`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.detail || "Failed to delete hotel.");
+        }
+        renderHotels(payload.hotels || []);
+        setMessage("hotelTableMessage", `Deleted ${hotel?.name || "hotel"}.`, "success");
+    } catch (error) {
+        setMessage("hotelTableMessage", error.message || "Failed to delete hotel.", "error");
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -98,6 +336,83 @@ function filterHotelStops(form) {
     }
 }
 
+async function fetchReprocessStatus() {
+    const response = await fetch("/hotel-management/reprocess-flagged-status", {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+    });
+    const payload = await response.json();
+    renderReprocessStatus(payload);
+    if (["queued", "running"].includes(payload.status)) {
+        scheduleReprocessPoll();
+    } else if (hotelReprocessTimer) {
+        clearTimeout(hotelReprocessTimer);
+        hotelReprocessTimer = null;
+    }
+    return payload;
+}
+
+function scheduleReprocessPoll() {
+    if (hotelReprocessTimer) {
+        clearTimeout(hotelReprocessTimer);
+    }
+    hotelReprocessTimer = window.setTimeout(() => {
+        fetchReprocessStatus().catch((error) => console.error("Failed to fetch reprocess status", error));
+    }, 3000);
+}
+
+async function runReprocessFlagged(button) {
+    if (!button || button.dataset.busy === "true") {
+        return;
+    }
+    button.dataset.busy = "true";
+    button.disabled = true;
+    button.classList.add("opacity-60", "cursor-not-allowed");
+    try {
+        const response = await fetch("/hotel-management/reprocess-flagged", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+        });
+        const payload = await response.json();
+        renderReprocessStatus(payload);
+        if (response.ok || response.status === 409) {
+            scheduleReprocessPoll();
+        }
+    } finally {
+        button.dataset.busy = "false";
+        button.disabled = false;
+        button.classList.remove("opacity-60", "cursor-not-allowed");
+    }
+}
+
+document.getElementById("addHotelForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    createHotelInline(event.currentTarget).catch((error) => console.error("Failed to create hotel", error));
+});
+
+document.getElementById("hotelTableBody")?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+        return;
+    }
+    if (target.classList.contains("edit-hotel-btn")) {
+        startInlineEdit(target);
+        return;
+    }
+    if (target.classList.contains("cancel-inline-edit")) {
+        renderHotels(hotelTableData);
+        return;
+    }
+    if (target.classList.contains("save-inline-edit")) {
+        saveInlineEdit(target).catch((error) => console.error("Failed to save hotel", error));
+        return;
+    }
+    if (target.classList.contains("delete-hotel-btn")) {
+        deleteHotel(target).catch((error) => console.error("Failed to delete hotel", error));
+    }
+});
+
 for (const form of document.querySelectorAll("form")) {
     const citySelect = form.querySelector(".hotel-city-select");
     if (!citySelect) {
@@ -116,5 +431,11 @@ for (const form of document.querySelectorAll("form")) {
 document.getElementById("reprocessFlaggedEmails")?.addEventListener("click", (event) => {
     runReprocessFlagged(event.currentTarget).catch((error) => console.error("Failed to reprocess flagged emails", error));
 });
+
+renderHotels(initialHotels || []);
+renderReprocessStatus(initialReprocessStatus);
+if (["queued", "running"].includes(initialReprocessStatus?.status)) {
+    scheduleReprocessPoll();
+}
 </script>
 {% endblock %}
