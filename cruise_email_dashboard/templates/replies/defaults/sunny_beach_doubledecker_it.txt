@@ -4,7 +4,7 @@ La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, {booking_typ
 
 {pickup_adjustment_paragraph}
 
-Di seguito trova il link al punto di prelievo. Si tratta di {bus_stop_description}. Il nostro grande autobus rosso a due piani stile Londra sara li alle {pickup_time} per venirla a prendere.
+{pickup_instructions}
 
 {maps_url}
 
@@ -14,3 +14,4 @@ La preghiamo di rispondere a questa e-mail per confermare punto e orario di prel
 
 Cordiali saluti,
 VIP Catamaran
+

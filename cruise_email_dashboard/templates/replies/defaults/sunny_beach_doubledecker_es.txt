@@ -4,7 +4,7 @@ Le agradecemos su reserva para {cruise_date}, {cruise_day}, {booking_type}, para
 
 {pickup_adjustment_paragraph}
 
-Adjuntamos el enlace al punto de recogida. Es {bus_stop_description}. Nuestro gran autobus rojo de dos pisos estilo Londres estara alli a las {pickup_time} para recogerle.
+{pickup_instructions}
 
 {maps_url}
 
@@ -14,3 +14,4 @@ Le rogamos responder a este correo para confirmar el punto y la hora de recogida
 
 Saludos cordiales,
 VIP Catamaran
+

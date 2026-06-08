@@ -2,7 +2,7 @@ Estimado/a {customer_name},
 
 Le agradecemos su reserva para {cruise_date}, {cruise_day}, {booking_type}, para {num_adults}.
 
-Nuestro minibús le recogera en {bus_stop_name} a las {pickup_time}.
+{pickup_instructions}
 
 {maps_url}
 
@@ -10,3 +10,4 @@ Le rogamos responder a este correo para confirmar el punto y la hora de recogida
 
 Saludos cordiales,
 VIP Catamaran
+

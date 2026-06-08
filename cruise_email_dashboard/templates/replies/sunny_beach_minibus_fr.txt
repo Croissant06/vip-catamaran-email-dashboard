@@ -2,7 +2,7 @@ Cher/Chere {customer_name},
 
 Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {booking_type}, pour {num_adults}.
 
-Notre minibus viendra vous chercher a {bus_stop_name} a {pickup_time}.
+{pickup_instructions}
 
 {maps_url}
 
@@ -10,3 +10,4 @@ Merci de repondre a cet e-mail pour confirmer le point et l'heure de prise en ch
 
 Cordialement,
 VIP Catamaran
+

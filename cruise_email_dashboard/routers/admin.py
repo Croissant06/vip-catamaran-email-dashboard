@@ -36,6 +36,7 @@ TEMPLATE_PLACEHOLDERS = [
     "{hotel_name}",
     "{bus_stop_name}",
     "{bus_stop_address}",
+    "{pickup_instructions}",
     "{pickup_time}",
     "{cruise_date}",
     "{cruise_day}",

@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 
 from cruise_email_dashboard.database.models import EmailLog, VehicleType
+from cruise_email_dashboard.services.official_pickup_copy import render_official_pickup_copy
 
 REPLIES_DIR = Path(__file__).resolve().parents[1] / "templates" / "replies"
 SUPPORTED_LANGUAGES = {"en", "es", "fr", "de", "it", "el"}
@@ -148,6 +149,47 @@ def _booking_type_label(email_log: EmailLog) -> str:
     return labels.get(email_log.booking_type, email_log.booking_type or "VIP Catamaran")
 
 
+def _legacy_sunny_beach_pickup_instructions(email_log: EmailLog, language: str) -> str:
+    stop = email_log.assigned_bus_stop
+    if not stop:
+        return ""
+    pickup_time = email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER
+    description = stop.description or stop.name
+    if stop.vehicle_type == VehicleType.minibus:
+        legacy_copy = {
+            "en": "Our minibus will collect you from {bus_stop_name} at {pickup_time}.",
+            "es": "Nuestro minibús le recogerá en {bus_stop_name} a las {pickup_time}.",
+            "fr": "Notre minibus viendra vous chercher à {bus_stop_name} à {pickup_time}.",
+            "de": "Unser Minibus holt Sie um {pickup_time} an {bus_stop_name} ab.",
+            "it": "Il nostro minibus la preleverà da {bus_stop_name} alle {pickup_time}.",
+            "el": "Το minibus μας θα σας παραλάβει από το {bus_stop_name} στις {pickup_time}.",
+        }
+        template = legacy_copy.get(language, legacy_copy["en"])
+        return template.format(bus_stop_name=stop.name, pickup_time=pickup_time)
+
+    legacy_copy = {
+        "en": "Please find attached a link to the pickup point. It is {bus_stop_description}. Our big red London double-decker bus will be there at {pickup_time} to collect you.",
+        "es": "Adjuntamos el enlace al punto de recogida. Es {bus_stop_description}. Nuestro gran autobús rojo de dos pisos estilo Londres estará allí a las {pickup_time} para recogerle.",
+        "fr": "Veuillez trouver ci-dessous le lien vers le point de prise en charge. Il s'agit de {bus_stop_description}. Notre grand bus rouge à impériale de style londonien sera là à {pickup_time} pour venir vous chercher.",
+        "de": "Hier finden Sie den Link zum Abholpunkt. Es ist {bus_stop_description}. Unser großer roter Londoner Doppeldeckerbus wird dort um {pickup_time} auf Sie warten.",
+        "it": "Di seguito trova il link al punto di prelievo. Si tratta di {bus_stop_description}. Il nostro grande autobus rosso a due piani stile Londra sarà lì alle {pickup_time} per venirla a prendere.",
+        "el": "Παρακαλώ βρείτε παρακάτω τον σύνδεσμο για το σημείο παραλαβής. Είναι {bus_stop_description}. Το μεγάλο κόκκινο λονδρέζικο διώροφο λεωφορείο μας θα είναι εκεί στις {pickup_time} για να σας παραλάβει.",
+    }
+    template = legacy_copy.get(language, legacy_copy["en"])
+    return template.format(bus_stop_description=description, pickup_time=pickup_time)
+
+
+def _pickup_instructions(email_log: EmailLog, language: str) -> str:
+    stop = email_log.assigned_bus_stop
+    if not stop:
+        return ""
+    pickup_time = email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER
+    official = render_official_pickup_copy(stop.name, language, pickup_time)
+    if official:
+        return official
+    return _legacy_sunny_beach_pickup_instructions(email_log, language)
+
+
 def _format_context(email_log: EmailLog) -> dict[str, str]:
     stop = email_log.assigned_bus_stop
     hotel = email_log.detected_hotel
@@ -164,6 +206,7 @@ def _format_context(email_log: EmailLog) -> dict[str, str]:
         "bus_stop_name": stop.name if stop else "",
         "bus_stop_address": stop.address if stop else "",
         "bus_stop_description": stop.description if stop and stop.description else (stop.name if stop else ""),
+        "pickup_instructions": _pickup_instructions(email_log, language),
         "pickup_adjustment_paragraph": _pickup_adjustment_paragraph(email_log, language),
         "pickup_time": email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER,
         "maps_url": stop.maps_url if stop and stop.maps_url else "",

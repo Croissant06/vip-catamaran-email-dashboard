@@ -2,7 +2,7 @@ Sehr geehrte/r {customer_name},
 
 Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fuer {num_adults}.
 
-Unser Minibus holt Sie um {pickup_time} an {bus_stop_name} ab.
+{pickup_instructions}
 
 {maps_url}
 
@@ -10,3 +10,4 @@ Bitte antworten Sie auf diese E-Mail, um Abholpunkt und Uhrzeit zu bestaetigen.
 
 Mit freundlichen Gruessen,
 VIP Catamaran
+

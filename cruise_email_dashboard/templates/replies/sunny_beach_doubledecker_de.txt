@@ -4,7 +4,7 @@ Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fu
 
 {pickup_adjustment_paragraph}
 
-Hier finden Sie den Link zum Abholpunkt. Es ist {bus_stop_description}. Unser grosser roter Londoner Doppeldeckerbus wird dort um {pickup_time} auf Sie warten.
+{pickup_instructions}
 
 {maps_url}
 
@@ -14,3 +14,4 @@ Bitte antworten Sie auf diese E-Mail, um Abholpunkt und Uhrzeit zu bestaetigen.
 
 Mit freundlichen Gruessen,
 VIP Catamaran
+

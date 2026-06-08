@@ -4,7 +4,7 @@ We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, f
 
 {pickup_adjustment_paragraph}
 
-Please find attached a link to the pickup point. It is {bus_stop_description}. Our big red London double-decker bus will be there at {pickup_time} to collect you.
+{pickup_instructions}
 
 {maps_url}
 
@@ -14,3 +14,4 @@ We kindly ask you to reply to this email to confirm the pickup point and time.
 
 Kind Regards,
 VIP Catamaran
+

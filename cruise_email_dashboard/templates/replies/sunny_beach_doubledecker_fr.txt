@@ -4,7 +4,7 @@ Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {boo
 
 {pickup_adjustment_paragraph}
 
-Veuillez trouver ci-dessous le lien vers le point de prise en charge. Il s'agit de {bus_stop_description}. Notre grand bus rouge a deux etages de style londonien sera la a {pickup_time} pour vous recuperer.
+{pickup_instructions}
 
 {maps_url}
 
@@ -14,3 +14,4 @@ Merci de repondre a cet e-mail pour confirmer le point et l'heure de prise en ch
 
 Cordialement,
 VIP Catamaran
+
