@@ -120,6 +120,22 @@ class OfficialPickupCopyTests(unittest.TestCase):
             reply,
         )
 
+    def test_english_best_western_stop_uses_official_wording(self) -> None:
+        email = make_email(
+            stop_name="Hotel Best Western / Sveshest",
+            stop_description="legacy",
+            vehicle_type=VehicleType.doubledecker,
+            language="en",
+            pickup_time="13:50",
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn(
+            "Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road behind the Best Western Hotel and next to Spider's pub. Our big red London double-decker bus will be there at 13:50 to collect you.",
+            reply,
+        )
+
     def test_german_minibus_stop_matches_new_structure(self) -> None:
         email = make_email(
             stop_name="SOL Nessebar Palas - with Minibus",
