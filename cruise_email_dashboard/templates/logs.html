@@ -2,12 +2,12 @@
 {% block header_title %}History & Logs{% endblock %}
 {% block header_subtitle %}Search across processed customer email history{% endblock %}
 {% block content %}
-<div class="mb-6 flex flex-col gap-3 rounded-xl bg-white p-4 shadow md:flex-row md:items-center md:justify-between">
-    <form method="get" class="flex flex-1 flex-col gap-3 sm:flex-row">
-        <input type="text" name="q" value="{{ q }}" placeholder="Search sender, booking number, subject, snippet, language" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <button type="submit" class="min-h-11 rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Search</button>
+<div class="mb-6 flex flex-col gap-3 rounded-xl bg-white p-4 shadow md:flex-row md:items-end md:justify-between">
+    <form method="get" class="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search sender, booking number, subject, snippet, language" class="min-h-11 w-full min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button type="submit" class="min-h-11 w-full shrink-0 rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Search</button>
     </form>
-    <a href="/logs/export" class="inline-flex min-h-11 items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700">Export CSV</a>
+    <a href="/logs/export" class="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 md:w-auto">Export CSV</a>
 </div>
 <div class="overflow-x-auto rounded-xl bg-white shadow">
     <table class="min-w-full text-sm">
