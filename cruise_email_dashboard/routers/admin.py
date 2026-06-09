@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -93,6 +93,15 @@ def _parse_optional_date(value: str):
 def _parse_optional_time(value: str):
     cleaned = str(value or "").strip()
     return datetime.strptime(cleaned, "%H:%M").time() if cleaned else None
+
+
+def _normalized_return_to(return_to: str) -> str:
+    return "logs" if return_to == "logs" else ""
+
+
+def _detail_redirect_url(email_id: int, return_to: str) -> str:
+    normalized = _normalized_return_to(return_to)
+    return f"/inbox/{email_id}?return_to={normalized}" if normalized else f"/inbox/{email_id}"
 
 
 def _ensure_template_defaults() -> None:
@@ -783,6 +792,7 @@ def reset_template(template_name: str, user: User = Depends(get_admin_user)):
 @router.post("/emails/{email_id}/parser")
 def update_email_parser_fields(
     email_id: int,
+    return_to: str = Query(default=""),
     booking_type: str = Form(""),
     cruise_date: str = Form(""),
     cruise_time: str = Form(""),
@@ -840,7 +850,7 @@ def update_email_parser_fields(
         email.template_language = email.detected_language or "en"
 
     db.commit()
-    return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    return RedirectResponse(url=_detail_redirect_url(email_id, return_to), status_code=303)
 
 
 @router.post("/settings")

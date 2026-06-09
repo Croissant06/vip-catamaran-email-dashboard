@@ -25,7 +25,7 @@
         </thead>
         <tbody>
             {% for email in rows %}
-            <tr class="border-t even:bg-gray-50 hover:bg-indigo-50">
+            <tr onclick="window.location='/inbox/{{ email.id }}?return_to=logs'" class="cursor-pointer border-t even:bg-gray-50 hover:bg-indigo-50">
                 <td class="px-4 py-3">{{ email.received_at.strftime("%Y-%m-%d %H:%M") }}</td>
                 <td class="px-4 py-3">
                     <div class="font-medium text-gray-900">{{ email.sender_name or email.sender_email }}</div>

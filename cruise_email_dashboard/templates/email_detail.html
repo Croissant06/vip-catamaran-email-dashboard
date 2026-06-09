@@ -4,6 +4,11 @@
 {% block content %}
 {% set sender_email_lower = (email.sender_email or "")|lower %}
 {% set is_relay_address = sender_email_lower.endswith("@reply.getyourguide.com") or sender_email_lower.endswith("@reply.bookeo.com") %}
+<div class="mb-4">
+    <a href="{{ back_href }}" class="inline-flex min-h-11 items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition duration-150 hover:bg-gray-50">
+        {{ back_label }}
+    </a>
+</div>
 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
     <div class="rounded-xl bg-white p-4 shadow sm:p-6">
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -85,7 +90,7 @@
                 Booking type could not be determined - please assign manually before sending reply.
             </div>
             {% endif %}
-            <form method="post" action="/inbox/{{ email.id }}/reassign" class="space-y-4">
+            <form method="post" action="/inbox/{{ email.id }}/reassign{{ detail_query_suffix }}" class="space-y-4">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Detected hotel</label>
                     <select id="detectedHotelSelect" name="detected_hotel_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -123,7 +128,7 @@
                 <h2 class="text-lg font-semibold">Parser Override</h2>
                 <p class="mt-1 text-sm text-gray-500">Adjust parsed booking fields, force a booking type, and optionally regenerate the reply draft.</p>
             </div>
-            <form method="post" action="/admin/emails/{{ email.id }}/parser" class="space-y-4">
+            <form method="post" action="/admin/emails/{{ email.id }}/parser{{ detail_query_suffix }}" class="space-y-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-sm font-medium text-gray-700">Booking type</label>
@@ -197,21 +202,21 @@
         {% endif %}
         {% if email.status.value != "cancelled" %}
         <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <form id="sendReplyForm" method="post" action="/inbox/{{ email.id }}/send">
+            <form id="sendReplyForm" method="post" action="/inbox/{{ email.id }}/send{{ detail_query_suffix }}">
                 <button type="submit" class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Send Reply</button>
             </form>
             {% if email.status.value == "send_failed" %}
-            <button id="retrySendButton" type="button" data-send-url="/inbox/{{ email.id }}/send" class="min-h-11 w-full rounded-md bg-rose-600 px-4 py-2 text-white transition duration-150 hover:bg-rose-700 sm:w-auto">
+            <button id="retrySendButton" type="button" data-send-url="/inbox/{{ email.id }}/send{{ detail_query_suffix }}" class="min-h-11 w-full rounded-md bg-rose-600 px-4 py-2 text-white transition duration-150 hover:bg-rose-700 sm:w-auto">
                 Retry Send
             </button>
             {% endif %}
-            <form method="post" action="/inbox/{{ email.id }}/manual">
+            <form method="post" action="/inbox/{{ email.id }}/manual{{ detail_query_suffix }}">
                 <button type="submit" class="min-h-11 w-full rounded-md bg-red-500 px-4 py-2 text-white transition duration-150 hover:bg-red-600 sm:w-auto">Flag as Manual</button>
             </form>
         </div>
         {% endif %}
         {% if not email.is_new %}
-        <form method="post" action="/inbox/{{ email.id }}/mark-unread">
+        <form method="post" action="/inbox/{{ email.id }}/mark-unread{{ detail_query_suffix }}">
             <button type="submit" class="min-h-11 w-full rounded-md bg-slate-700 px-4 py-2 text-white transition duration-150 hover:bg-slate-800 sm:w-auto">Mark as Unread</button>
         </form>
         {% endif %}
@@ -227,7 +232,7 @@ const hotelStopDefaults = {
     {% endfor %}
 };
 
-const reassignForm = document.querySelector('form[action="/inbox/{{ email.id }}/reassign"]');
+const reassignForm = document.querySelector('form[action^="/inbox/{{ email.id }}/reassign"]');
 const hotelSelect = document.getElementById("detectedHotelSelect");
 const stopSelect = document.getElementById("assignedBusStopSelect");
 const helperMessage = document.getElementById("busStopAutoUpdateMessage");

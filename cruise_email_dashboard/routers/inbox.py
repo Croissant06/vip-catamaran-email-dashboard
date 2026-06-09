@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
+from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Form, Query, Request
@@ -58,6 +59,19 @@ def _wants_json_response(request: Request) -> bool:
     accept = request.headers.get("accept", "").lower()
     requested_with = request.headers.get("x-requested-with", "").lower()
     return "application/json" in accept or requested_with == "xmlhttprequest"
+
+
+def _normalized_return_to(return_to: str) -> str:
+    return "logs" if return_to == "logs" else ""
+
+
+def _detail_query_suffix(return_to: str) -> str:
+    normalized = _normalized_return_to(return_to)
+    return f"?return_to={quote_plus(normalized)}" if normalized else ""
+
+
+def _detail_redirect_url(email_id: int, return_to: str) -> str:
+    return f"/inbox/{email_id}{_detail_query_suffix(return_to)}"
 
 
 @router.get("")
@@ -142,7 +156,13 @@ def inbox_page(
 
 
 @router.get("/{email_id}")
-def email_detail(request: Request, email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def email_detail(
+    request: Request,
+    email_id: int,
+    return_to: str = Query(default=""),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     email = (
         db.query(EmailLog)
         .options(
@@ -156,9 +176,20 @@ def email_detail(request: Request, email_id: int, db: Session = Depends(get_db),
     db.commit()
     hotels = db.query(Hotel).order_by(Hotel.name).all()
     stops = db.query(BusStop).order_by(BusStop.name).all()
+    normalized_return_to = _normalized_return_to(return_to)
     return templates.TemplateResponse(
         "email_detail.html",
-        template_context(request, user=user, email=email, hotels=hotels, stops=stops),
+        template_context(
+            request,
+            user=user,
+            email=email,
+            hotels=hotels,
+            stops=stops,
+            return_to=normalized_return_to,
+            detail_query_suffix=_detail_query_suffix(normalized_return_to),
+            back_href="/logs" if normalized_return_to == "logs" else "/inbox",
+            back_label="Back to History & Logs" if normalized_return_to == "logs" else "Back to Inbox",
+        ),
     )
 
 
@@ -166,14 +197,16 @@ def email_detail(request: Request, email_id: int, db: Session = Depends(get_db),
 def send_email_reply(
     email_id: int,
     request: Request,
+    return_to: str = Query(default=""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    normalized_return_to = _normalized_return_to(return_to)
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email.status == EmailStatus.cancelled:
         if _wants_json_response(request):
             return JSONResponse({"ok": False, "status": email.status.value, "send_error": ""}, status_code=400)
-        return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+        return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
     send_succeeded = False
     try:
         send_reply(email)
@@ -196,34 +229,42 @@ def send_email_reply(
                 "sent_at": email.sent_at.strftime("%Y-%m-%d %H:%M") if email.sent_at else "",
             }
         )
-    return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
 
 
 @router.post("/{email_id}/manual")
-def flag_manual(email_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def flag_manual(
+    email_id: int,
+    return_to: str = Query(default=""),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    normalized_return_to = _normalized_return_to(return_to)
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email.status == EmailStatus.cancelled:
-        return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+        return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
     email.status = EmailStatus.manual
     email.is_new = False
     db.commit()
-    return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
 
 
 @router.post("/{email_id}/mark-unread")
 def mark_email_unread(
     email_id: int,
     request: Request,
+    return_to: str = Query(default=""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    normalized_return_to = _normalized_return_to(return_to)
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email:
         email.is_new = True
         db.commit()
     if _wants_json_response(request):
         return JSONResponse({"ok": bool(email), "is_new": bool(email and email.is_new)})
-    return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
 
 
 @router.post("/{email_id}/reassign")
@@ -232,12 +273,14 @@ def reassign_email(
     detected_hotel_id: int = Form(...),
     assigned_bus_stop_id: int = Form(...),
     draft_reply: str = Form(...),
+    return_to: str = Query(default=""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    normalized_return_to = _normalized_return_to(return_to)
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
     if email.status == EmailStatus.cancelled:
-        return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+        return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
     existing_draft_reply = email.draft_reply or ""
     email.detected_hotel = db.query(Hotel).filter(Hotel.id == detected_hotel_id).first()
     email.assigned_bus_stop = db.query(BusStop).filter(BusStop.id == assigned_bus_stop_id).first()
@@ -253,4 +296,4 @@ def reassign_email(
         email.draft_reply = draft_reply
     email.status = EmailStatus.pending
     db.commit()
-    return RedirectResponse(url=f"/inbox/{email_id}", status_code=303)
+    return RedirectResponse(url=_detail_redirect_url(email_id, normalized_return_to), status_code=303)
