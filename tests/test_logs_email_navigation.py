@@ -29,8 +29,9 @@ class LogsEmailNavigationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(f"/inbox/{self.email_id}?return_to=logs", response.text)
+        self.assertIn('class="hidden text-sm text-gray-500 md:block">Live inbox monitoring</div>', response.text)
         self.assertIn('class="mb-6 flex flex-col gap-3 rounded-xl bg-white p-4 shadow md:flex-row md:items-end md:justify-between"', response.text)
-        self.assertIn('class="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center"', response.text)
+        self.assertIn('class="flex min-w-0 flex-1 flex-col gap-3 md:max-w-4xl md:flex-[0_1_44rem] md:flex-row md:items-center"', response.text)
         self.assertIn('class="min-h-11 w-full shrink-0 rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto"', response.text)
         self.assertIn('class="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 md:w-auto"', response.text)
 
