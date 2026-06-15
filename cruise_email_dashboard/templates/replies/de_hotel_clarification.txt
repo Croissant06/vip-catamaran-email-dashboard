@@ -1,0 +1,10 @@
+Sehr geehrte/r {customer_name},
+
+Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}!
+
+Wir konnten Ihr Hotel anhand der Buchungsdetails nicht eindeutig identifizieren.
+Bitte antworten Sie uns mit dem Namen Ihres Hotels oder Ihrer Anlage,
+damit wir Ihren Abholpunkt und Ihre Abholzeit bestaetigen koennen.
+
+Mit freundlichen Gruessen
+VIP Catamaran

@@ -10,6 +10,7 @@ REPLIES_DIR = Path(__file__).resolve().parents[1] / "templates" / "replies"
 SUPPORTED_LANGUAGES = {"en", "es", "fr", "de", "it", "el"}
 MISSING_PICKUP_TIME_PLACEHOLDER = "[PICKUP TIME NOT FOUND]"
 HOTEL_REQUEST_WARNING = "No hotel provided by customer"
+HOTEL_CLARIFICATION_VARIANT = "hotel_clarification"
 OLD_NESSEBAR_PORT_VARIANT = "old_nessebar_port"
 PICKUP_ADJUSTMENT_COPY = {
     "en": "We would like to offer to pick you up from a pickup point closer to {hotel_name}.",
@@ -93,11 +94,17 @@ def available_template_files() -> list[Path]:
     return sorted(REPLIES_DIR.glob("*.txt"))
 
 
+def _needs_hotel_clarification(email_log: EmailLog) -> bool:
+    return not email_log.detected_hotel and not email_log.assigned_bus_stop
+
+
 def _template_variant(email_log: EmailLog) -> str:
     if HOTEL_REQUEST_WARNING in (email_log.warning_note or ""):
         return "hotel_request"
     if email_log.extraction_source == "old_nessebar_port":
         return OLD_NESSEBAR_PORT_VARIANT
+    if _needs_hotel_clarification(email_log):
+        return HOTEL_CLARIFICATION_VARIANT
     stop = email_log.assigned_bus_stop
     city_name = stop.city.name if stop and stop.city else ""
     vehicle_type = stop.vehicle_type if stop else VehicleType.doubledecker
@@ -111,8 +118,8 @@ def _template_variant(email_log: EmailLog) -> str:
 
 
 def template_path(variant: str, language: str) -> Path:
-    if variant == "hotel_request":
-        return REPLIES_DIR / f"{language}_hotel_request.txt"
+    if variant in {"hotel_request", HOTEL_CLARIFICATION_VARIANT}:
+        return REPLIES_DIR / f"{language}_{variant}.txt"
     return REPLIES_DIR / f"{variant}_{language}.txt"
 
 
@@ -251,7 +258,7 @@ def regenerate_email_draft(email_log: EmailLog) -> None:
 
     stop = email_log.assigned_bus_stop
     variant = _template_variant(email_log)
-    if not stop and variant != "hotel_request":
+    if not stop and variant not in {"hotel_request", HOTEL_CLARIFICATION_VARIANT}:
         email_log.draft_reply = ""
         return
     reply, template_language, warning_note = build_reply(email_log)

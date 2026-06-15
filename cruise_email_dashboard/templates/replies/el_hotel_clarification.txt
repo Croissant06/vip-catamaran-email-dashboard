@@ -1,0 +1,10 @@
+Agapite/i {customer_name},
+
+Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}!
+
+Den kataferame na entopisoume to xetodocheio sas apo ta stoicheia tis kratisis.
+Parakaloume apantiste mas me to onoma tou xetodocheiou i tou sygkrotimatos sas,
+oste na epivevaiosoume to simeio kai tin ora paralavis sas.
+
+Me ektimisi,
+VIP Catamaran

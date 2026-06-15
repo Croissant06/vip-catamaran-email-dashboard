@@ -4,7 +4,7 @@ import unittest
 from datetime import date, time
 
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, Hotel, VehicleType
-from cruise_email_dashboard.services.reply_generator import build_reply
+from cruise_email_dashboard.services.reply_generator import build_reply, regenerate_email_draft
 
 
 def make_email(
@@ -156,6 +156,59 @@ class OfficialPickupCopyTests(unittest.TestCase):
         )
         self.assertIn(
             'Unser Transfer wird Sie dort um 09:40 abholen.',
+            reply,
+        )
+
+    def test_unmatched_hotel_generates_english_clarification_draft(self) -> None:
+        email = EmailLog(
+            received_at=date(2026, 6, 8),
+            sender_email="guest@example.com",
+            sender_name="Test Guest",
+            subject="Booking Confirmation",
+            full_body="Body",
+            detected_language="en",
+            template_language="en",
+            booking_type="MORNING",
+            cruise_date=date(2026, 6, 10),
+            num_adults=2,
+            raw_hotel_extraction="Unnamed Road",
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn(
+            "We were unable to identify your hotel from the booking details.",
+            reply,
+        )
+        self.assertIn(
+            "Could you please reply with the name of your hotel or complex",
+            reply,
+        )
+        regenerate_email_draft(email)
+        self.assertIn(
+            "We were unable to identify your hotel from the booking details.",
+            email.draft_reply,
+        )
+
+    def test_unmatched_hotel_generates_translated_clarification_draft(self) -> None:
+        email = EmailLog(
+            received_at=date(2026, 6, 8),
+            sender_email="guest@example.com",
+            sender_name="Test Guest",
+            subject="Booking Confirmation",
+            full_body="Body",
+            detected_language="es",
+            template_language="es",
+            booking_type="MORNING",
+            cruise_date=date(2026, 6, 10),
+            num_adults=2,
+            raw_hotel_extraction="Unnamed Road",
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn(
+            "No hemos podido identificar su hotel a partir de los datos de la reserva.",
             reply,
         )
 

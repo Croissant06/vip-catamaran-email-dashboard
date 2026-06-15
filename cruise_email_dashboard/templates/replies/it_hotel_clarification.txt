@@ -1,0 +1,10 @@
+Gentile {customer_name},
+
+La ringraziamo per la sua prenotazione per il {cruise_date}, {cruise_day}.
+
+Non siamo riusciti a identificare il suo hotel dai dettagli della prenotazione.
+Potrebbe risponderci indicando il nome del suo hotel o complesso
+cosi da poter confermare il punto e l'orario del pickup?
+
+Cordiali saluti,
+VIP Catamaran

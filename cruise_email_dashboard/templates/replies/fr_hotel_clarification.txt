@@ -1,0 +1,10 @@
+Cher/Chere {customer_name},
+
+Merci pour votre reservation pour le {cruise_date}, {cruise_day}.
+
+Nous n'avons pas pu identifier votre hotel a partir des details de la reservation.
+Pourriez-vous nous repondre en indiquant le nom de votre hotel ou complexe
+afin que nous puissions confirmer votre point et votre heure de prise en charge ?
+
+Cordialement,
+VIP Catamaran
