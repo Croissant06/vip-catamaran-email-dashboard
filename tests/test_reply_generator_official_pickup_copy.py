@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from datetime import date
+from datetime import date, time
 
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, Hotel, VehicleType
 from cruise_email_dashboard.services.reply_generator import build_reply
@@ -14,6 +14,7 @@ def make_email(
     vehicle_type: VehicleType,
     language: str = "en",
     pickup_time: str = "08:20",
+    cruise_time_value: time | None = None,
 ) -> EmailLog:
     city = City(name="Sunny Beach")
     stop = BusStop(
@@ -40,6 +41,7 @@ def make_email(
         template_language=language,
         booking_type="MORNING",
         cruise_date=date(2026, 6, 10),
+        cruise_time=cruise_time_value,
         num_adults=2,
         pickup_time_text=pickup_time,
         raw_hotel_extraction=hotel.name,
@@ -91,12 +93,13 @@ class OfficialPickupCopyTests(unittest.TestCase):
             vehicle_type=VehicleType.minibus,
             language="en",
             pickup_time="08:55",
+            cruise_time_value=time(9, 0),
         )
 
         reply, _, _ = build_reply(email)
 
         self.assertIn(
-            "Please find attached a link to the exact location of our catamaran. You must be there at 08:55 as we sail away at 08:55.",
+            "Please find attached a link to the exact location of our catamaran. Please be there by 08:50 as we sail away at 09:00.",
             reply,
         )
 

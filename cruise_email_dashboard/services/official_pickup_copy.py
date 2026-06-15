@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, time, timedelta
+
 OFFICIAL_PICKUP_COPY = {
     "en": {
         "Vlas - Petrol Station": 'Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas. Our big red London double-decker bus will be there at {pickup_time} to collect you.',
@@ -22,7 +24,7 @@ OFFICIAL_PICKUP_COPY = {
         "Biliyana Ness - with Minibus": 'Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road near the Bilyana Beach Hotel. Our transport will be there at {pickup_time} to collect you. You can identify our minibus by the "VIP Catamaran" sign on the front window.',
         "Oasis Ness - with Minibus": 'Please find attached a link to the pickup point that you have selected. It is the bus stop on the road, next to Bistro Oasis. Our guide and transportation will be there at {pickup_time} to collect you. You can identify our minibus by the "VIP Catamaran" sign on the front window.',
         "Marina Palas - with Minibus": 'Please find attached a link to the pickup point that you have selected. It is located right outside Hotel Sol Marina Palace. Our transport will be there at {pickup_time} to collect you. You can recognise our minibus by the VIP Catamaran sign on the front window.',
-        "Meet at Catamaran": 'Please find attached a link to the exact location of our catamaran. You must be there at {pickup_time} as we sail away at {pickup_time}.',
+        "Meet at Catamaran": 'Please find attached a link to the exact location of our catamaran. Please be there by {arrival_time} as we sail away at {cruise_time}.',
     },
     "es": {
         "Vlas - Petrol Station": 'Adjuntamos un enlace al punto de recogida que ha seleccionado. Se encuentra en la parada de autobús de la carretera principal, en la rotonda junto a la gasolinera de Sveti Vlas. Nuestro gran autobús rojo de dos pisos estilo Londres estará allí a las {pickup_time} para recogerle.',
@@ -45,7 +47,7 @@ OFFICIAL_PICKUP_COPY = {
         "Biliyana Ness - with Minibus": 'Adjuntamos un enlace al punto de recogida que ha seleccionado. Se encuentra en la parada de autobús de la carretera principal cerca del Hotel Bilyana Beach. Nuestro transporte estará allí a las {pickup_time} para recogerle. Puede identificar nuestro minibús por el cartel "VIP Catamaran" en el parabrisas delantero.',
         "Oasis Ness - with Minibus": 'Adjuntamos un enlace al punto de recogida que ha seleccionado. Se encuentra en la parada de autobús de la carretera, junto a Bistro Oasis. Nuestro guía y el transporte estarán allí a las {pickup_time} para recogerle. Puede identificar nuestro minibús por el cartel "VIP Catamaran" en el parabrisas delantero.',
         "Marina Palas - with Minibus": 'Adjuntamos un enlace al punto de recogida que ha seleccionado. Se encuentra justo fuera del Hotel Sol Marina Palace. Nuestro transporte estará allí a las {pickup_time} para recogerle. Puede reconocer nuestro minibús por el cartel VIP Catamaran en el parabrisas delantero.',
-        "Meet at Catamaran": 'Adjuntamos un enlace con la ubicación exacta de nuestro catamarán. Debe estar allí a las {pickup_time}, ya que zarpamos a las {pickup_time}.',
+        "Meet at Catamaran": 'Adjuntamos un enlace con la ubicación exacta de nuestro catamarán. Por favor, esté allí antes de las {arrival_time}, ya que zarpamos a las {cruise_time}.',
     },
     "fr": {
         "Vlas - Petrol Station": 'Veuillez trouver ci-joint le lien vers le point de prise en charge que vous avez sélectionné. Il se trouve à l\'arrêt de bus sur la route principale, au rond-point à côté de la station-service de Sveti Vlas. Notre grand bus rouge à impériale de style londonien sera là à {pickup_time} pour venir vous chercher.',
@@ -68,7 +70,7 @@ OFFICIAL_PICKUP_COPY = {
         "Biliyana Ness - with Minibus": 'Veuillez trouver ci-joint le lien vers le point de prise en charge que vous avez sélectionné. Il se trouve à l\'arrêt de bus sur la route principale près de l\'hôtel Bilyana Beach. Notre transport sera là à {pickup_time} pour venir vous chercher. Vous pouvez reconnaître notre minibus grâce au panneau "VIP Catamaran" sur le pare-brise avant.',
         "Oasis Ness - with Minibus": 'Veuillez trouver ci-joint le lien vers le point de prise en charge que vous avez sélectionné. Il se trouve à l\'arrêt de bus sur la route, à côté du Bistro Oasis. Notre guide et le transport seront là à {pickup_time} pour venir vous chercher. Vous pouvez reconnaître notre minibus grâce au panneau "VIP Catamaran" sur le pare-brise avant.',
         "Marina Palas - with Minibus": 'Veuillez trouver ci-joint le lien vers le point de prise en charge que vous avez sélectionné. Il se trouve juste devant l\'hôtel Sol Marina Palace. Notre transport sera là à {pickup_time} pour venir vous chercher. Vous pouvez reconnaître notre minibus grâce au panneau VIP Catamaran sur le pare-brise avant.',
-        "Meet at Catamaran": 'Veuillez trouver ci-joint le lien vers l\'emplacement exact de notre catamaran. Vous devez être sur place à {pickup_time}, car nous appareillons à {pickup_time}.',
+        "Meet at Catamaran": 'Veuillez trouver ci-joint le lien vers l\'emplacement exact de notre catamaran. Veuillez être sur place avant {arrival_time}, car nous appareillons à {cruise_time}.',
     },
     "de": {
         "Vlas - Petrol Station": 'Hier finden Sie den Link zu dem von Ihnen ausgewählten Abholpunkt. Es handelt sich um die Bushaltestelle an der Hauptstraße am Kreisverkehr neben der Tankstelle in Sveti Vlas. Unser großer roter Londoner Doppeldeckerbus wird Sie dort um {pickup_time} abholen.',
@@ -91,7 +93,7 @@ OFFICIAL_PICKUP_COPY = {
         "Biliyana Ness - with Minibus": 'Hier finden Sie den Link zu dem von Ihnen ausgewählten Abholpunkt. Es handelt sich um die Bushaltestelle an der Hauptstraße in der Nähe des Hotels Bilyana Beach. Unser Transfer wird Sie dort um {pickup_time} abholen. Sie erkennen unseren Minibus an dem "VIP Catamaran"-Schild in der Frontscheibe.',
         "Oasis Ness - with Minibus": 'Hier finden Sie den Link zu dem von Ihnen ausgewählten Abholpunkt. Es handelt sich um die Bushaltestelle an der Straße neben dem Bistro Oasis. Unser Reiseleiter und der Transfer werden Sie dort um {pickup_time} abholen. Sie erkennen unseren Minibus an dem "VIP Catamaran"-Schild in der Frontscheibe.',
         "Marina Palas - with Minibus": 'Hier finden Sie den Link zu dem von Ihnen ausgewählten Abholpunkt. Er befindet sich direkt vor dem Hotel Sol Marina Palace. Unser Transfer wird Sie dort um {pickup_time} abholen. Sie erkennen unseren Minibus an dem VIP Catamaran-Schild in der Frontscheibe.',
-        "Meet at Catamaran": 'Hier finden Sie den Link zum genauen Standort unseres Katamarans. Sie müssen um {pickup_time} dort sein, da wir um {pickup_time} ablegen.',
+        "Meet at Catamaran": 'Hier finden Sie den Link zum genauen Standort unseres Katamarans. Bitte seien Sie bis {arrival_time} dort, da wir um {cruise_time} ablegen.',
     },
     "it": {
         "Vlas - Petrol Station": 'Di seguito trova il link al punto di prelievo che ha selezionato. Si tratta della fermata dell\'autobus sulla strada principale, alla rotonda accanto alla stazione di servizio di Sveti Vlas. Il nostro grande autobus rosso a due piani stile Londra sarà lì alle {pickup_time} per venirla a prendere.',
@@ -114,7 +116,7 @@ OFFICIAL_PICKUP_COPY = {
         "Biliyana Ness - with Minibus": 'Di seguito trova il link al punto di prelievo che ha selezionato. Si tratta della fermata dell\'autobus sulla strada principale vicino all\'Hotel Bilyana Beach. Il nostro trasporto sarà lì alle {pickup_time} per venirla a prendere. Può riconoscere il nostro minibus dal cartello "VIP Catamaran" sul parabrezza anteriore.',
         "Oasis Ness - with Minibus": 'Di seguito trova il link al punto di prelievo che ha selezionato. Si tratta della fermata dell\'autobus sulla strada, accanto al Bistro Oasis. La nostra guida e il trasporto saranno lì alle {pickup_time} per venirla a prendere. Può riconoscere il nostro minibus dal cartello "VIP Catamaran" sul parabrezza anteriore.',
         "Marina Palas - with Minibus": 'Di seguito trova il link al punto di prelievo che ha selezionato. Si trova proprio fuori dall\'Hotel Sol Marina Palace. Il nostro trasporto sarà lì alle {pickup_time} per venirla a prendere. Può riconoscere il nostro minibus dal cartello VIP Catamaran sul parabrezza anteriore.',
-        "Meet at Catamaran": 'Di seguito trova il link con la posizione esatta del nostro catamarano. Deve essere lì alle {pickup_time}, perché salpiamo alle {pickup_time}.',
+        "Meet at Catamaran": 'Di seguito trova il link con la posizione esatta del nostro catamarano. La preghiamo di essere lì entro le {arrival_time}, poiché salpiamo alle {cruise_time}.',
     },
     "el": {
         "Vlas - Petrol Station": 'Παρακαλούμε βρείτε συνημμένο τον σύνδεσμο για το σημείο παραλαβής που έχετε επιλέξει. Πρόκειται για τη στάση λεωφορείου στον κεντρικό δρόμο, στον κυκλικό κόμβο δίπλα στο βενζινάδικο στο Sveti Vlas. Το μεγάλο κόκκινο λονδρέζικο διώροφο λεωφορείο μας θα είναι εκεί στις {pickup_time} για να σας παραλάβει.',
@@ -137,15 +139,32 @@ OFFICIAL_PICKUP_COPY = {
         "Biliyana Ness - with Minibus": 'Παρακαλούμε βρείτε συνημμένο τον σύνδεσμο για το σημείο παραλαβής που έχετε επιλέξει. Πρόκειται για τη στάση λεωφορείου στον κεντρικό δρόμο κοντά στο Hotel Bilyana Beach. Η μεταφορά μας θα είναι εκεί στις {pickup_time} για να σας παραλάβει. Μπορείτε να αναγνωρίσετε το minibus μας από την πινακίδα "VIP Catamaran" στο μπροστινό παρμπρίζ.',
         "Oasis Ness - with Minibus": 'Παρακαλούμε βρείτε συνημμένο τον σύνδεσμο για το σημείο παραλαβής που έχετε επιλέξει. Πρόκειται για τη στάση λεωφορείου στον δρόμο, δίπλα στο Bistro Oasis. Ο ξεναγός μας και η μεταφορά θα είναι εκεί στις {pickup_time} για να σας παραλάβουν. Μπορείτε να αναγνωρίσετε το minibus μας από την πινακίδα "VIP Catamaran" στο μπροστινό παρμπρίζ.',
         "Marina Palas - with Minibus": 'Παρακαλούμε βρείτε συνημμένο τον σύνδεσμο για το σημείο παραλαβής που έχετε επιλέξει. Βρίσκεται ακριβώς έξω από το Hotel Sol Marina Palace. Η μεταφορά μας θα είναι εκεί στις {pickup_time} για να σας παραλάβει. Μπορείτε να αναγνωρίσετε το minibus μας από την πινακίδα VIP Catamaran στο μπροστινό παρμπρίζ.',
-        "Meet at Catamaran": 'Παρακαλούμε βρείτε συνημμένο τον σύνδεσμο με την ακριβή τοποθεσία του καταμαράν μας. Πρέπει να είστε εκεί στις {pickup_time}, καθώς αναχωρούμε στις {pickup_time}.',
+        "Meet at Catamaran": 'Παρακαλούμε βρείτε συνημμένο τον σύνδεσμο με την ακριβή τοποθεσία του καταμαράν μας. Παρακαλούμε να είστε εκεί μέχρι τις {arrival_time}, καθώς αναχωρούμε στις {cruise_time}.',
     },
 }
 
 
-def render_official_pickup_copy(stop_name: str, language: str, pickup_time: str) -> str | None:
+def _format_time(value: time | None, fallback: str) -> str:
+    return value.strftime("%H:%M") if value else fallback
+
+
+def _arrival_time_for_cruise(cruise_time: time | None, fallback: str) -> str:
+    if cruise_time is None:
+        return fallback
+    cruise_moment = datetime.combine(datetime.today().date(), cruise_time)
+    return (cruise_moment - timedelta(minutes=10)).strftime("%H:%M")
+
+
+def render_official_pickup_copy(stop_name: str, language: str, pickup_time: str, cruise_time: time | None = None) -> str | None:
     language_code = (language or "en").lower()
     templates = OFFICIAL_PICKUP_COPY.get(language_code) or OFFICIAL_PICKUP_COPY["en"]
     template = templates.get(stop_name) or OFFICIAL_PICKUP_COPY["en"].get(stop_name)
     if not template:
         return None
-    return template.format(pickup_time=pickup_time)
+    cruise_time_text = _format_time(cruise_time, pickup_time)
+    arrival_time_text = _arrival_time_for_cruise(cruise_time, pickup_time)
+    return template.format(
+        pickup_time=pickup_time,
+        cruise_time=cruise_time_text,
+        arrival_time=arrival_time_text,
+    )

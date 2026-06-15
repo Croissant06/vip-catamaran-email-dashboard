@@ -184,7 +184,7 @@ def _pickup_instructions(email_log: EmailLog, language: str) -> str:
     if not stop:
         return ""
     pickup_time = email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER
-    official = render_official_pickup_copy(stop.name, language, pickup_time)
+    official = render_official_pickup_copy(stop.name, language, pickup_time, email_log.cruise_time)
     if official:
         return official
     return _legacy_sunny_beach_pickup_instructions(email_log, language)
