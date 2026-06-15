@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
+import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
@@ -66,6 +67,7 @@ DEMO_CITY_BOOKING_TYPES = {
         {"value": "OBZOR", "label": "Obzor Route"},
     ],
 }
+PLUS_CODE_INPUT_PATTERN = re.compile(r"^[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}$", re.IGNORECASE)
 
 
 def _ensure_hotel_management_access(user: User) -> User:
@@ -93,6 +95,21 @@ def _parse_optional_date(value: str):
 def _parse_optional_time(value: str):
     cleaned = str(value or "").strip()
     return datetime.strptime(cleaned, "%H:%M").time() if cleaned else None
+
+
+def _normalize_plus_code(value: str) -> str | None:
+    cleaned = str(value or "").strip().upper().replace(" ", "")
+    return cleaned or None
+
+
+def _validated_plus_code(value: str) -> str | None:
+    normalized = _normalize_plus_code(value)
+    if normalized and not PLUS_CODE_INPUT_PATTERN.fullmatch(normalized):
+        raise HTTPException(
+            status_code=400,
+            detail="Plus Code must look like MPW6+64 using letters/numbers, a plus sign, and 2-3 trailing characters.",
+        )
+    return normalized
 
 
 def _normalized_return_to(return_to: str) -> str:
@@ -182,11 +199,17 @@ def _demo_booking_subject(booking_type: str) -> str:
     return subjects.get(booking_type, "VIP Catamaran Booking Confirmation")
 
 
-def _create_hotel_record(db: Session, name: str, aliases: str, bus_stop_id: str, city_id: str) -> Hotel:
+def _create_hotel_record(db: Session, name: str, aliases: str, plus_code: str, bus_stop_id: str, city_id: str) -> Hotel:
     parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
     bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
     parsed_city_id = _parse_optional_int(city_id) or (bus_stop.city_id if bus_stop else None)
-    hotel = Hotel(name=name, aliases=aliases, bus_stop_id=parsed_bus_stop_id, city_id=parsed_city_id)
+    hotel = Hotel(
+        name=name,
+        aliases=aliases,
+        plus_code=_validated_plus_code(plus_code),
+        bus_stop_id=parsed_bus_stop_id,
+        city_id=parsed_city_id,
+    )
     db.add(hotel)
     db.commit()
     return hotel
@@ -214,6 +237,7 @@ def _serialize_hotel(hotel: Hotel) -> dict[str, str | int | None]:
         "id": hotel.id,
         "name": hotel.name,
         "aliases": hotel.aliases or "",
+        "plus_code": hotel.plus_code or "",
         "city_id": hotel.city_id,
         "city_name": hotel.city.name if hotel.city else "",
         "bus_stop_id": hotel.bus_stop_id,
@@ -545,13 +569,14 @@ def admin_reprocess_all(db: Session = Depends(get_db), user: User = Depends(get_
 def create_hotel(
     name: str = Form(...),
     aliases: str = Form(""),
+    plus_code: str = Form(""),
     bus_stop_id: str = Form(""),
     city_id: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     _ensure_hotel_management_access(user)
-    _create_hotel_record(db, name=name, aliases=aliases, bus_stop_id=bus_stop_id, city_id=city_id)
+    _create_hotel_record(db, name=name, aliases=aliases, plus_code=plus_code, bus_stop_id=bus_stop_id, city_id=city_id)
     return RedirectResponse(url="/admin", status_code=303)
 
 
@@ -560,13 +585,14 @@ def create_hotel_from_hotel_management(
     request: Request,
     name: str = Form(...),
     aliases: str = Form(""),
+    plus_code: str = Form(""),
     bus_stop_id: str = Form(""),
     city_id: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     _ensure_hotel_management_access(user)
-    hotel = _create_hotel_record(db, name=name, aliases=aliases, bus_stop_id=bus_stop_id, city_id=city_id)
+    hotel = _create_hotel_record(db, name=name, aliases=aliases, plus_code=plus_code, bus_stop_id=bus_stop_id, city_id=city_id)
     db.refresh(hotel)
     if _wants_json_response(request):
         return JSONResponse({"ok": True, "hotel": _serialize_hotel(hotel), **_hotel_management_payload(db)})
@@ -578,6 +604,7 @@ def update_hotel_bus_stop_from_hotel_management(
     request: Request,
     hotel_id: int,
     bus_stop_id: str = Form(""),
+    plus_code: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -589,6 +616,7 @@ def update_hotel_bus_stop_from_hotel_management(
     parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
     bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
     hotel.bus_stop_id = parsed_bus_stop_id
+    hotel.plus_code = _validated_plus_code(plus_code)
     if bus_stop is not None:
         hotel.city_id = bus_stop.city_id
     db.commit()
@@ -620,6 +648,7 @@ def update_hotel(
     hotel_id: int,
     name: str = Form(...),
     aliases: str = Form(""),
+    plus_code: str = Form(""),
     bus_stop_id: str = Form(""),
     city_id: str = Form(""),
     db: Session = Depends(get_db),
@@ -630,6 +659,7 @@ def update_hotel(
     bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
     hotel.name = name
     hotel.aliases = aliases
+    hotel.plus_code = _validated_plus_code(plus_code)
     hotel.bus_stop_id = parsed_bus_stop_id
     hotel.city_id = _parse_optional_int(city_id) or (bus_stop.city_id if bus_stop else None)
     db.commit()

@@ -49,6 +49,7 @@ class HotelManagementPageTests(unittest.TestCase):
             data={
                 "name": "Codex HM Test Create",
                 "aliases": "Codex Alias",
+                "plus_code": "MPW6+64",
                 "city_id": str(city_id),
                 "bus_stop_id": str(stop_id),
             },
@@ -56,6 +57,7 @@ class HotelManagementPageTests(unittest.TestCase):
         self.assertEqual(create_response.status_code, 200)
         created_payload = create_response.json()
         self.assertEqual(created_payload["hotel"]["name"], "Codex HM Test Create")
+        self.assertEqual(created_payload["hotel"]["plus_code"], "MPW6+64")
         hotel_id = created_payload["hotel"]["id"]
 
         list_response = self.client.get(
@@ -68,10 +70,11 @@ class HotelManagementPageTests(unittest.TestCase):
         update_response = self.client.post(
             f"/hotel-management/hotels/{hotel_id}/bus-stop",
             headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
-            data={"bus_stop_id": str(replacement_stop_id)},
+            data={"bus_stop_id": str(replacement_stop_id), "plus_code": "QQ22+AB"},
         )
         self.assertEqual(update_response.status_code, 200)
         self.assertEqual(update_response.json()["hotel"]["bus_stop_id"], replacement_stop_id)
+        self.assertEqual(update_response.json()["hotel"]["plus_code"], "QQ22+AB")
 
         delete_response = self.client.post(
             f"/hotel-management/hotels/{hotel_id}/delete",
@@ -112,6 +115,48 @@ class HotelManagementPageTests(unittest.TestCase):
 
         self.assertEqual(status_response.status_code, 200)
         self.assertEqual(status_response.json()["message"], "Reprocessing started...")
+
+    def test_admin_page_shows_plus_code_field(self) -> None:
+        admin_client = TestClient(app)
+        admin_client.app.state.scheduler = SimpleNamespace(add_job=lambda *args, **kwargs: None)
+        response = admin_client.post(
+            "/login",
+            data={"username": "admin", "password": "admin123"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        admin_page = admin_client.get("/admin")
+
+        self.assertEqual(admin_page.status_code, 200)
+        self.assertIn('name="plus_code"', admin_page.text)
+
+    def test_staff_hotel_create_rejects_invalid_plus_code(self) -> None:
+        with SessionLocal() as db:
+            city = db.query(City).filter(City.name == "Sunny Beach").first()
+            self.assertIsNotNone(city)
+            stop = (
+                db.query(BusStop)
+                .filter(BusStop.city_id == city.id)
+                .order_by(BusStop.name.asc())
+                .first()
+            )
+            self.assertIsNotNone(stop)
+
+        response = self.client.post(
+            "/hotel-management/hotels",
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            data={
+                "name": "Codex HM Test Invalid Plus",
+                "aliases": "",
+                "plus_code": "not-a-plus-code",
+                "city_id": str(city.id),
+                "bus_stop_id": str(stop.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Plus Code", response.json()["detail"])
 
 
 if __name__ == "__main__":
