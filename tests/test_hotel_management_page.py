@@ -158,6 +158,49 @@ class HotelManagementPageTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Plus Code", response.json()["detail"])
 
+    def test_staff_hotel_create_rejects_duplicate_name_case_insensitive(self) -> None:
+        with SessionLocal() as db:
+            city = db.query(City).filter(City.name == "Sunny Beach").first()
+            self.assertIsNotNone(city)
+            stop = (
+                db.query(BusStop)
+                .filter(BusStop.city_id == city.id)
+                .order_by(BusStop.name.asc())
+                .first()
+            )
+            self.assertIsNotNone(stop)
+            db.add(
+                Hotel(
+                    name="Codex HM Test Existing",
+                    aliases="Existing Alias",
+                    bus_stop_id=stop.id,
+                    city_id=city.id,
+                )
+            )
+            db.commit()
+
+        response = self.client.post(
+            "/hotel-management/hotels",
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            data={
+                "name": "codex hm test existing",
+                "aliases": "",
+                "plus_code": "",
+                "city_id": str(city.id),
+                "bus_stop_id": str(stop.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("already exists", response.json()["detail"])
+        self.assertIn("Codex HM Test Existing", response.json()["detail"])
+
+    def test_home_page_does_not_show_average_response_time(self) -> None:
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Average response time", response.text)
+
 
 if __name__ == "__main__":
     unittest.main()

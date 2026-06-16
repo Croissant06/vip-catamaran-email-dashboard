@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from cruise_email_dashboard.database.db import SessionLocal, get_db
@@ -200,11 +201,27 @@ def _demo_booking_subject(booking_type: str) -> str:
 
 
 def _create_hotel_record(db: Session, name: str, aliases: str, plus_code: str, bus_stop_id: str, city_id: str) -> Hotel:
+    normalized_name = str(name or "").strip()
+    existing_hotel = (
+        db.query(Hotel)
+        .filter(func.lower(Hotel.name) == normalized_name.lower())
+        .first()
+        if normalized_name
+        else None
+    )
+    if existing_hotel is not None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"A hotel named '{existing_hotel.name}' already exists. "
+                "Please edit the existing record instead, or use a different name if this is a different hotel."
+            ),
+        )
     parsed_bus_stop_id = _parse_optional_int(bus_stop_id)
     bus_stop = db.query(BusStop).filter(BusStop.id == parsed_bus_stop_id).first() if parsed_bus_stop_id else None
     parsed_city_id = _parse_optional_int(city_id) or (bus_stop.city_id if bus_stop else None)
     hotel = Hotel(
-        name=name,
+        name=normalized_name,
         aliases=aliases,
         plus_code=_validated_plus_code(plus_code),
         bus_stop_id=parsed_bus_stop_id,

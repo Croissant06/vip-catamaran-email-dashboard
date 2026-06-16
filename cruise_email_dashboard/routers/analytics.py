@@ -27,11 +27,6 @@ def home(request: Request, db: Session = Depends(get_db), user: User = Depends(g
     )
     flagged = db.query(func.count(EmailLog.id)).filter(EmailLog.status == EmailStatus.flagged).scalar() or 0
     cancelled = db.query(func.count(EmailLog.id)).filter(EmailLog.status == EmailStatus.cancelled).scalar() or 0
-    average_response_minutes = (
-        db.query(func.avg((func.julianday(EmailLog.sent_at) - func.julianday(EmailLog.received_at)) * 24 * 60))
-        .filter(EmailLog.sent_at.is_not(None))
-        .scalar()
-    )
 
     chart_days: list[str] = []
     sent_series: list[int] = []
@@ -84,7 +79,6 @@ def home(request: Request, db: Session = Depends(get_db), user: User = Depends(g
             sent_today=sent_today,
             flagged=flagged,
             cancelled=cancelled,
-            avg_response=f"{average_response_minutes:.1f} min" if average_response_minutes else "N/A",
             chart_days=chart_days,
             sent_series=sent_series,
             flagged_series=flagged_series,
