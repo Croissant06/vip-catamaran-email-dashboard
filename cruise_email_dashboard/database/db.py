@@ -162,13 +162,10 @@ def _run_reference_data_fixes() -> None:
             alias_values = [alias.strip() for alias in aliases if alias.strip()]
             alias_csv = ",".join(alias_values)
             if hotel:
-                hotel.aliases = alias_csv
-                hotel.bus_stop_id = stop.id
-                hotel.city_id = sunny_beach.id
-            else:
-                hotel = Hotel(name=name, aliases=alias_csv, bus_stop_id=stop.id, city_id=sunny_beach.id)
-                db.add(hotel)
-                hotel_by_name[name] = hotel
+                return
+            hotel = Hotel(name=name, aliases=alias_csv, bus_stop_id=stop.id, city_id=sunny_beach.id)
+            db.add(hotel)
+            hotel_by_name[name] = hotel
 
         upsert_hotel("Favorit Aparthotel", ("Favorit", "Favorit Apart"), "Flower Street Main Bus Stop")
         upsert_hotel("Premier Fort Beach", ("Premier Fort", "Fort Beach"), "Mercury Grand Market")
