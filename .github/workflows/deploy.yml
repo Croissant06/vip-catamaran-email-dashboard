@@ -11,6 +11,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run test suite
+        env:
+          IMAP_HOST: mail.test.local
+          IMAP_USER: test-imap-user
+          IMAP_PASSWORD: test-imap-password
+          SMTP_HOST: mail.test.local
+          SMTP_USER: test-smtp-user
+          SMTP_PASSWORD: test-smtp-password
+          SECRET_KEY: test-secret-key-for-ci
+          DATABASE_URL: sqlite:///./ci-test.db
+        run: python -m pytest tests -q
+
       - name: Prepare SSH key
         run: |
           set -e
