@@ -44,4 +44,7 @@ jobs:
 
             sudo -n systemctl restart vip-catamaran
             sudo -n systemctl status vip-catamaran --no-pager
+
+            sleep 5
+            curl --fail --silent --show-error http://127.0.0.1:8000 > /dev/null
           EOF
