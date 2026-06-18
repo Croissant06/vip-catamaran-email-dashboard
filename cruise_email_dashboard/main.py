@@ -47,7 +47,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Cruise Email Dashboard", lifespan=lifespan)
-app.add_middleware(SessionMiddleware, secret_key=settings.secret_key, session_cookie="cruise_dashboard_session")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key,
+    session_cookie="cruise_dashboard_session",
+    https_only=True,
+    same_site="lax",
+    max_age=604800,
+)
 app.mount("/static", StaticFiles(directory="cruise_email_dashboard/static"), name="static")
 
 app.include_router(auth.router)
