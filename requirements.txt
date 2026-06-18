@@ -14,3 +14,4 @@ langdetect==1.0.9
 rapidfuzz==3.13.0
 beautifulsoup4==4.12.3
 python-dateutil==2.9.0.post0
+pytest==9.0.1
