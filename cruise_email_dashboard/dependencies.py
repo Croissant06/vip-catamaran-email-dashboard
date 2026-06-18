@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from cruise_email_dashboard.database.db import get_db
 from cruise_email_dashboard.database.models import User, UserRole
 from cruise_email_dashboard.services.auth import current_user
+from cruise_email_dashboard.services.csrf import ensure_csrf_token
 from cruise_email_dashboard.settings import settings
 
 templates = Jinja2Templates(directory="cruise_email_dashboard/templates")
@@ -29,5 +30,6 @@ def template_context(request: Request, user: User | None = None, **kwargs):
         "active_path": request.url.path,
         "demo_mode": settings.demo_mode,
         "demo_email": settings.demo_email,
+        "csrf_token": ensure_csrf_token(request),
         **kwargs,
     }

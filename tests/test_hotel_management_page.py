@@ -9,18 +9,18 @@ from fastapi.testclient import TestClient
 from cruise_email_dashboard.database.db import SessionLocal
 from cruise_email_dashboard.database.models import BusStop, City, Hotel
 from cruise_email_dashboard.main import app
+from tests.test_helpers import extract_csrf_token, login_with_csrf
 
 
 class HotelManagementPageTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.client = TestClient(app)
+        self.client = TestClient(app, base_url="https://testserver")
         self.client.app.state.scheduler = SimpleNamespace(add_job=lambda *args, **kwargs: None)
-        response = self.client.post(
-            "/login",
-            data={"username": "tickets", "password": "Vessy@02"},
-            follow_redirects=True,
-        )
-        self.assertEqual(response.status_code, 200)
+        login_with_csrf(self.client, "tickets", "Vessy@02")
+        hotel_management_page = self.client.get("/hotel-management")
+        self.assertEqual(hotel_management_page.status_code, 200)
+        self.csrf_token = extract_csrf_token(hotel_management_page.text)
+        self.assertIsNotNone(self.csrf_token)
 
     def tearDown(self) -> None:
         with SessionLocal() as db:
@@ -45,7 +45,7 @@ class HotelManagementPageTests(unittest.TestCase):
 
         create_response = self.client.post(
             "/hotel-management/hotels",
-            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": self.csrf_token},
             data={
                 "name": "Codex HM Test Create",
                 "aliases": "Codex Alias",
@@ -69,7 +69,7 @@ class HotelManagementPageTests(unittest.TestCase):
 
         update_response = self.client.post(
             f"/hotel-management/hotels/{hotel_id}/bus-stop",
-            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": self.csrf_token},
             data={"bus_stop_id": str(replacement_stop_id), "plus_code": "QQ22+AB"},
         )
         self.assertEqual(update_response.status_code, 200)
@@ -78,7 +78,7 @@ class HotelManagementPageTests(unittest.TestCase):
 
         delete_response = self.client.post(
             f"/hotel-management/hotels/{hotel_id}/delete",
-            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": self.csrf_token},
         )
         self.assertEqual(delete_response.status_code, 200)
         self.assertTrue(delete_response.json()["ok"])
@@ -101,7 +101,7 @@ class HotelManagementPageTests(unittest.TestCase):
         ), patch.object(self.client.app.state.scheduler, "add_job", return_value=None):
             start_response = self.client.post(
                 "/hotel-management/reprocess-flagged",
-                headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+                headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": self.csrf_token},
             )
 
         self.assertEqual(start_response.status_code, 202)
@@ -117,14 +117,9 @@ class HotelManagementPageTests(unittest.TestCase):
         self.assertEqual(status_response.json()["message"], "Reprocessing started...")
 
     def test_admin_page_shows_plus_code_field(self) -> None:
-        admin_client = TestClient(app)
+        admin_client = TestClient(app, base_url="https://testserver")
         admin_client.app.state.scheduler = SimpleNamespace(add_job=lambda *args, **kwargs: None)
-        response = admin_client.post(
-            "/login",
-            data={"username": "admin", "password": "admin123"},
-            follow_redirects=True,
-        )
-        self.assertEqual(response.status_code, 200)
+        login_with_csrf(admin_client, "admin", "admin123")
 
         admin_page = admin_client.get("/admin")
 
@@ -145,7 +140,7 @@ class HotelManagementPageTests(unittest.TestCase):
 
         response = self.client.post(
             "/hotel-management/hotels",
-            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": self.csrf_token},
             data={
                 "name": "Codex HM Test Invalid Plus",
                 "aliases": "",
@@ -181,7 +176,7 @@ class HotelManagementPageTests(unittest.TestCase):
 
         response = self.client.post(
             "/hotel-management/hotels",
-            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+            headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": self.csrf_token},
             data={
                 "name": "codex hm test existing",
                 "aliases": "",

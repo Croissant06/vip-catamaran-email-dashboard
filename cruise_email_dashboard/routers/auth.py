@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 from cruise_email_dashboard.database.db import get_db
 from cruise_email_dashboard.dependencies import template_context, templates
 from cruise_email_dashboard.services.auth import authenticate_user
+from cruise_email_dashboard.services.csrf import validate_csrf
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(validate_csrf)])
 
 
 @router.get("/login")

@@ -91,6 +91,7 @@
             </div>
             {% endif %}
             <form method="post" action="/inbox/{{ email.id }}/reassign{{ detail_query_suffix }}" class="space-y-4">
+                {% include "_csrf_input.html" %}
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Detected hotel</label>
                     <select id="detectedHotelSelect" name="detected_hotel_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -129,6 +130,7 @@
                 <p class="mt-1 text-sm text-gray-500">Adjust parsed booking fields, force a booking type, and optionally regenerate the reply draft.</p>
             </div>
             <form method="post" action="/admin/emails/{{ email.id }}/parser{{ detail_query_suffix }}" class="space-y-4">
+                {% include "_csrf_input.html" %}
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-sm font-medium text-gray-700">Booking type</label>
@@ -203,6 +205,7 @@
         {% if email.status.value != "cancelled" %}
         <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <form id="sendReplyForm" method="post" action="/inbox/{{ email.id }}/send{{ detail_query_suffix }}">
+                {% include "_csrf_input.html" %}
                 <button type="submit" class="min-h-11 w-full rounded-md bg-indigo-600 px-4 py-2 text-white transition duration-150 hover:bg-indigo-700 sm:w-auto">Send Reply</button>
             </form>
             {% if email.status.value == "send_failed" %}
@@ -211,12 +214,14 @@
             </button>
             {% endif %}
             <form method="post" action="/inbox/{{ email.id }}/manual{{ detail_query_suffix }}">
+                {% include "_csrf_input.html" %}
                 <button type="submit" class="min-h-11 w-full rounded-md bg-red-500 px-4 py-2 text-white transition duration-150 hover:bg-red-600 sm:w-auto">Flag as Manual</button>
             </form>
         </div>
         {% endif %}
         {% if not email.is_new %}
         <form method="post" action="/inbox/{{ email.id }}/mark-unread{{ detail_query_suffix }}">
+            {% include "_csrf_input.html" %}
             <button type="submit" class="min-h-11 w-full rounded-md bg-slate-700 px-4 py-2 text-white transition duration-150 hover:bg-slate-800 sm:w-auto">Mark as Unread</button>
         </form>
         {% endif %}
@@ -249,6 +254,7 @@ const mobilePresenceUsers = document.getElementById("mobilePresenceUsers");
 let presenceIntervalId = null;
 let currentPresenceUsers = [];
 let presenceLeaving = false;
+const withCsrfHeaders = window.dashboardCsrf?.withHeaders ?? ((headers) => headers);
 const statusBadgeClasses = {
     pending: "bg-yellow-100 text-yellow-700 rounded-full px-2 py-0.5 text-xs",
     sent: "bg-green-100 text-green-700 rounded-full px-2 py-0.5 text-xs",
@@ -364,10 +370,10 @@ async function sendPresenceHeartbeat() {
         await fetch("/presence/heartbeat", {
             method: "POST",
             credentials: "same-origin",
-            headers: {
+            headers: withCsrfHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-            },
+            }),
             body: JSON.stringify({
                 email_log_id: presenceEmailId,
                 session_id: presenceSessionId(),
@@ -387,18 +393,13 @@ function notifyPresenceLeave() {
         email_log_id: presenceEmailId,
         session_id: presenceSessionId(),
     });
-    if (navigator.sendBeacon) {
-        const blob = new Blob([payload], { type: "application/json" });
-        navigator.sendBeacon("/presence/leave", blob);
-        return;
-    }
     fetch("/presence/leave", {
         method: "POST",
         credentials: "same-origin",
-        headers: {
+        headers: withCsrfHeaders({
             "Content-Type": "application/json",
             "Accept": "application/json",
-        },
+        }),
         body: payload,
         keepalive: true,
     }).catch(() => {});
@@ -453,10 +454,10 @@ async function retrySendInPlace() {
         const response = await fetch(retrySendButton.dataset.sendUrl, {
             method: "POST",
             credentials: "same-origin",
-            headers: {
+            headers: withCsrfHeaders({
                 Accept: "application/json",
                 "X-Requested-With": "XMLHttpRequest",
-            },
+            }),
         });
         const payload = await response.json();
         updateStatusBadge(payload.status || "send_failed");

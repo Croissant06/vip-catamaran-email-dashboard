@@ -16,6 +16,7 @@
         <div data-admin-panel="hotels" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Hotel</h2>
             <form method="post" action="/admin/hotels" class="space-y-3">
+                {% include "_csrf_input.html" %}
                 <input name="name" placeholder="Hotel name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 <textarea name="aliases" placeholder="Aliases, comma separated" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
@@ -36,6 +37,7 @@
         <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Bus Stop</h2>
             <form method="post" action="/admin/bus-stops" class="space-y-3">
+                {% include "_csrf_input.html" %}
                 <input name="name" placeholder="Stop name" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 <input name="address" placeholder="Address" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 <select name="city_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
@@ -59,6 +61,7 @@
         <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Add Schedule</h2>
             <form method="post" action="/admin/schedules" class="space-y-3">
+                {% include "_csrf_input.html" %}
                 <select name="bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for stop in bus_stops %}<option value="{{ stop.id }}">{{ stop.name }}</option>{% endfor %}
                 </select>
@@ -109,6 +112,7 @@
                     <p class="mt-1 text-xs text-gray-500">Import older mailbox emails starting from a chosen date without changing their read state.</p>
                     <div id="historyImportStatus" class="mt-3 rounded-md px-3 py-2 text-xs whitespace-pre-wrap"></div>
                     <form id="historyImportForm" method="post" action="/admin/mailbox-status/import-history" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        {% include "_csrf_input.html" %}
                         <label class="flex-1 text-sm text-gray-700">
                             <span class="mb-1 block font-medium">Start date</span>
                             <input type="date" name="since_date" value="{{ history_import_default_since }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -136,6 +140,7 @@
             <div class="space-y-4">
                 {% for template in reply_templates %}
                 <form method="post" action="/admin/templates/{{ template.name }}" class="rounded-lg border border-gray-200 p-4">
+                    {% include "_csrf_input.html" %}
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <div>
                             <h3 class="font-medium">{{ template.name }}</h3>
@@ -156,6 +161,7 @@
         <div data-admin-panel="general" class="rounded-xl bg-white p-4 shadow sm:p-6">
             <h2 class="mb-4 text-lg font-semibold">Settings</h2>
             <form method="post" action="/admin/settings" class="space-y-3">
+                {% include "_csrf_input.html" %}
                 <input name="imap_host" value="{{ settings.imap_host }}" placeholder="IMAP host" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <input type="number" name="imap_port" value="{{ settings.imap_port }}" placeholder="IMAP port" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <input name="imap_user" value="{{ settings.imap_user }}" placeholder="IMAP user" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -213,6 +219,7 @@
         <div class="space-y-2 overflow-x-auto text-sm">
             {% for hotel in hotels %}
             <form method="post" action="/admin/hotels/{{ hotel.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
+                {% include "_csrf_input.html" %}
                 <input name="name" value="{{ hotel.name }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <textarea name="aliases" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ hotel.aliases }}</textarea>
                 <p class="text-xs text-gray-500">Enter alternate names customers might use, e.g. Helena Park, Helena, Zora.</p>
@@ -243,6 +250,7 @@
         <div class="space-y-2 overflow-x-auto text-sm">
             {% for stop in bus_stops %}
             <form method="post" action="/admin/bus-stops/{{ stop.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
+                {% include "_csrf_input.html" %}
                 <input name="name" value="{{ stop.name }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <input name="address" value="{{ stop.address }}" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <select name="city_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
@@ -275,6 +283,7 @@
         <div class="space-y-2 overflow-x-auto text-sm">
             {% for schedule in schedules %}
             <form method="post" action="/admin/schedules/{{ schedule.id }}" class="space-y-2 rounded-md bg-gray-50 p-3">
+                {% include "_csrf_input.html" %}
                 <select name="bus_stop_id" class="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {% for stop in bus_stops %}
                     <option value="{{ stop.id }}" {% if stop.id == schedule.bus_stop_id %}selected{% endif %}>{{ stop.name }}</option>
@@ -314,6 +323,7 @@
 const staffHotelOnly = {{ "true" if staff_hotel_only else "false" }};
 let historyImportStatus = {{ history_import_status | tojson }};
 let historyImportPollInterval = null;
+const withCsrfHeaders = window.dashboardCsrf?.withHeaders ?? ((headers) => headers);
 
 function setStatus(dotId, textId, status, message) {
     const dot = document.getElementById(dotId);
@@ -432,10 +442,10 @@ async function startHistoryImport(event) {
     const response = await fetch(form.action, {
         method: "POST",
         credentials: "same-origin",
-        headers: {
+        headers: withCsrfHeaders({
             Accept: "application/json",
             "X-Requested-With": "XMLHttpRequest",
-        },
+        }),
         body: formData,
     });
     const payload = await response.json();
@@ -462,7 +472,11 @@ async function refreshMailboxStatus() {
 }
 
 async function postMailboxAction(url) {
-    await fetch(url, { method: "POST" });
+    await fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: withCsrfHeaders({}),
+    });
     await refreshMailboxStatus();
 }
 
@@ -498,7 +512,11 @@ function hideReprocessModal() {
 }
 
 async function runReprocessAll() {
-    const response = await fetch("/admin/reprocess-all", { method: "POST" });
+    const response = await fetch("/admin/reprocess-all", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: withCsrfHeaders({}),
+    });
     const data = await response.json();
     showReprocessModal(data);
 }

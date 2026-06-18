@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session, joinedload
 from cruise_email_dashboard.database.db import get_db
 from cruise_email_dashboard.database.models import BusStop, EmailLog, EmailStatus, Hotel, User
 from cruise_email_dashboard.dependencies import get_current_user, template_context, templates
+from cruise_email_dashboard.services.csrf import validate_csrf
 from cruise_email_dashboard.services.mailer import send_reply
 from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_PLACEHOLDER, regenerate_email_draft
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 
-router = APIRouter(prefix="/inbox", tags=["inbox"])
+router = APIRouter(prefix="/inbox", tags=["inbox"], dependencies=[Depends(validate_csrf)])
 SOFIA_TZ = ZoneInfo("Europe/Sofia")
 DEFAULT_QUICK_RANGE = "last_7_days"
 

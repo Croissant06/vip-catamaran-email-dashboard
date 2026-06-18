@@ -1,6 +1,27 @@
 const sidebar = document.getElementById("sidebar");
 const backdrop = document.getElementById("backdrop");
 const hamburger = document.getElementById("hamburger");
+const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+
+function getCsrfToken() {
+    return csrfTokenMeta?.content || "";
+}
+
+function withCsrfHeaders(headers = {}) {
+    const token = getCsrfToken();
+    if (!token) {
+        return { ...headers };
+    }
+    return {
+        ...headers,
+        "X-CSRF-Token": token,
+    };
+}
+
+window.dashboardCsrf = {
+    getToken: getCsrfToken,
+    withHeaders: withCsrfHeaders,
+};
 
 function openSidebar() {
     sidebar?.classList.remove("-translate-x-full");
@@ -61,6 +82,24 @@ document.addEventListener("submit", (event) => {
         control.disabled = true;
         control.classList.add("opacity-60", "cursor-not-allowed");
     });
+});
+
+document.querySelectorAll("form").forEach((form) => {
+    if ((form.method || "").toLowerCase() !== "post") {
+        return;
+    }
+    if (form.querySelector('input[name="csrf_token"]')) {
+        return;
+    }
+    const token = getCsrfToken();
+    if (!token) {
+        return;
+    }
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "csrf_token";
+    input.value = token;
+    form.prepend(input);
 });
 
 window.addEventListener("pageshow", () => {

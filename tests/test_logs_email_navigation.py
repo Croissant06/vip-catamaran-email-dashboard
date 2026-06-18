@@ -7,17 +7,13 @@ from fastapi.testclient import TestClient
 from cruise_email_dashboard.database.db import SessionLocal
 from cruise_email_dashboard.database.models import EmailLog
 from cruise_email_dashboard.main import app
+from tests.test_helpers import login_with_csrf
 
 
 class LogsEmailNavigationTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.client = TestClient(app)
-        response = self.client.post(
-            "/login",
-            data={"username": "tickets", "password": "Vessy@02"},
-            follow_redirects=True,
-        )
-        self.assertEqual(response.status_code, 200)
+        self.client = TestClient(app, base_url="https://testserver")
+        login_with_csrf(self.client, "tickets", "Vessy@02")
 
         with SessionLocal() as db:
             email = db.query(EmailLog).order_by(EmailLog.id.asc()).first()

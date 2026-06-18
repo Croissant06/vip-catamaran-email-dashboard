@@ -13,6 +13,7 @@ from cruise_email_dashboard.database.db import SessionLocal, get_db
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, EmailStatus, Hotel, Schedule, User, UserRole, VehicleType
 from cruise_email_dashboard.dependencies import get_admin_user, get_current_user, template_context, templates
 from cruise_email_dashboard.services.classifier import _build_label_map, classify_email, parse_booking_email
+from cruise_email_dashboard.services.csrf import validate_csrf
 from cruise_email_dashboard.services.email_poller import apply_classification_to_email, poll_now, reset_poll_backoff
 from cruise_email_dashboard.services.history_import import (
     get_history_import_status,
@@ -33,8 +34,8 @@ from cruise_email_dashboard.services.reply_generator import MISSING_PICKUP_TIME_
 from cruise_email_dashboard.services.scheduler import resolve_pickup_schedule
 from cruise_email_dashboard.settings import settings, update_env
 
-router = APIRouter(prefix="/admin", tags=["admin"])
-hotel_management_router = APIRouter(tags=["hotel-management"])
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(validate_csrf)])
+hotel_management_router = APIRouter(tags=["hotel-management"], dependencies=[Depends(validate_csrf)])
 DEFAULT_HISTORY_IMPORT_DATE = "2025-07-01"
 
 DEFAULT_REPLIES_DIR = REPLIES_DIR / "defaults"

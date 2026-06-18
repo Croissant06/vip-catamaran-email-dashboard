@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from cruise_email_dashboard.database.db import get_db
 from cruise_email_dashboard.database.models import EmailLog, User, UserPresence
 from cruise_email_dashboard.dependencies import get_current_user
+from cruise_email_dashboard.services.csrf import validate_csrf
 from cruise_email_dashboard.services.notifications import broker
 from cruise_email_dashboard.services.presence import (
     ACTIVE_WINDOW_SECONDS,
@@ -16,7 +17,7 @@ from cruise_email_dashboard.services.presence import (
     utc_now_naive,
 )
 
-router = APIRouter(prefix="/presence", tags=["presence"])
+router = APIRouter(prefix="/presence", tags=["presence"], dependencies=[Depends(validate_csrf)])
 
 
 class HeartbeatPayload(BaseModel):
