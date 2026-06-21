@@ -1,9 +1,28 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from datetime import date, datetime, time
 from pathlib import Path
 
-from cruise_email_dashboard.database.db import DATABASE_URL, SessionLocal, init_db
+TEST_DATABASE_PATH = Path(tempfile.gettempdir()) / f"vip-catamaran-pytest-{os.getpid()}.db"
+TEST_DATABASE_URL = f"sqlite:///{TEST_DATABASE_PATH.as_posix()}"
+
+
+def _bootstrap_test_environment() -> None:
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+    os.environ.setdefault("IMAP_HOST", "test-imap.local")
+    os.environ.setdefault("IMAP_USER", "test-user")
+    os.environ.setdefault("IMAP_PASSWORD", "test-pass")
+    os.environ.setdefault("SMTP_HOST", "test-smtp.local")
+    os.environ.setdefault("SMTP_USER", "test-user")
+    os.environ.setdefault("SMTP_PASSWORD", "test-pass")
+    os.environ.setdefault("SECRET_KEY", "test-secret-key")
+
+
+_bootstrap_test_environment()
+
+from cruise_email_dashboard.database.db import DATABASE_URL, SessionLocal, engine, init_db
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, EmailStatus, Hotel, User, UserRole, VehicleType
 from cruise_email_dashboard.services.auth import hash_password
 
@@ -19,8 +38,9 @@ def _reset_ci_sqlite_db() -> None:
     db_path = _sqlite_path()
     if db_path is None:
         return
-    if "ci-test" not in db_path.name:
+    if db_path != TEST_DATABASE_PATH:
         return
+    engine.dispose()
     if db_path.exists():
         db_path.unlink()
 
@@ -177,3 +197,12 @@ def pytest_sessionstart(session) -> None:
         )
         _ensure_email(db, hotel=hotel, stop=flower_street)
         db.commit()
+
+
+def pytest_sessionfinish(session, exitstatus) -> None:
+    db_path = _sqlite_path()
+    if db_path is None or db_path != TEST_DATABASE_PATH:
+        return
+    engine.dispose()
+    if db_path.exists():
+        db_path.unlink()
