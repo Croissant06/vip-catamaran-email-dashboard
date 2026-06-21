@@ -116,6 +116,13 @@ class HotelManagementPageTests(unittest.TestCase):
         self.assertEqual(status_response.status_code, 200)
         self.assertEqual(status_response.json()["message"], "Reprocessing started...")
 
+    def test_hotel_management_page_uses_shared_csrf_helper_without_redeclaring_it(self) -> None:
+        hotel_management_page = self.client.get("/hotel-management")
+
+        self.assertEqual(hotel_management_page.status_code, 200)
+        self.assertNotIn("const withCsrfHeaders", hotel_management_page.text)
+        self.assertIn("window.dashboardCsrf?.withHeaders?.(", hotel_management_page.text)
+
     def test_admin_page_shows_plus_code_field(self) -> None:
         admin_client = TestClient(app, base_url="https://testserver")
         admin_client.app.state.scheduler = SimpleNamespace(add_job=lambda *args, **kwargs: None)

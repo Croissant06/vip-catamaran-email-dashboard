@@ -105,7 +105,6 @@ const inboxPresenceContainers = Array.from(document.querySelectorAll("[data-pres
 const markUnreadButtons = Array.from(document.querySelectorAll("[data-mark-unread-id]"));
 let inboxPresenceCache = {};
 let inboxPresenceIntervalId = null;
-const withCsrfHeaders = window.dashboardCsrf?.withHeaders ?? ((headers) => headers);
 
 function inboxPresenceConfig() {
     if (window.innerWidth < 768) {
@@ -180,10 +179,13 @@ async function markRowUnread(button) {
         const response = await fetch(`/inbox/${emailId}/mark-unread`, {
             method: "POST",
             credentials: "same-origin",
-            headers: withCsrfHeaders({
+            headers: window.dashboardCsrf?.withHeaders?.({
                 Accept: "application/json",
                 "X-Requested-With": "XMLHttpRequest",
-            }),
+            }) ?? {
+                Accept: "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+            },
         });
         if (!response.ok) {
             throw new Error("Failed to mark unread");

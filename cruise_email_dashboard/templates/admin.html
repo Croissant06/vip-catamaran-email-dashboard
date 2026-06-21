@@ -323,7 +323,6 @@
 const staffHotelOnly = {{ "true" if staff_hotel_only else "false" }};
 let historyImportStatus = {{ history_import_status | tojson }};
 let historyImportPollInterval = null;
-const withCsrfHeaders = window.dashboardCsrf?.withHeaders ?? ((headers) => headers);
 
 function setStatus(dotId, textId, status, message) {
     const dot = document.getElementById(dotId);
@@ -442,10 +441,13 @@ async function startHistoryImport(event) {
     const response = await fetch(form.action, {
         method: "POST",
         credentials: "same-origin",
-        headers: withCsrfHeaders({
+        headers: window.dashboardCsrf?.withHeaders?.({
             Accept: "application/json",
             "X-Requested-With": "XMLHttpRequest",
-        }),
+        }) ?? {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+        },
         body: formData,
     });
     const payload = await response.json();
@@ -475,7 +477,7 @@ async function postMailboxAction(url) {
     await fetch(url, {
         method: "POST",
         credentials: "same-origin",
-        headers: withCsrfHeaders({}),
+        headers: window.dashboardCsrf?.withHeaders?.({}) ?? {},
     });
     await refreshMailboxStatus();
 }
@@ -515,7 +517,7 @@ async function runReprocessAll() {
     const response = await fetch("/admin/reprocess-all", {
         method: "POST",
         credentials: "same-origin",
-        headers: withCsrfHeaders({}),
+        headers: window.dashboardCsrf?.withHeaders?.({}) ?? {},
     });
     const data = await response.json();
     showReprocessModal(data);
