@@ -92,7 +92,7 @@ def seed() -> None:
             ("Secrets Resort",       "Secrets Resort",                             "Secrets Resort - Main Road Bus Stop"),
         ]
         for name, aliases, stop_name in sunny_hotels:
-            db.add(Hotel(name=name, aliases=aliases, bus_stop_id=stops_by_name[stop_name].id, city_id=sunny_beach.id))
+            db.add(Hotel(name=name, aliases=aliases, bus_stop=stops_by_name[stop_name], city_id=sunny_beach.id))
 
         # Obzor stops — coords are reasonable estimates for the resort strip north of Obzor town.
         # Maps links are coordinate-based (permanent). Update coords if staff can verify on-site.
@@ -132,7 +132,7 @@ def seed() -> None:
             ("Luk Oil Petrol Station",     "Luk Oil,Lukoil",       "Luk Oil Petrol Station"),
         ]
         for name, aliases, stop_name in obzor_hotels:
-            db.add(Hotel(name=name, aliases=aliases, bus_stop_id=stops_by_name[stop_name].id, city_id=obzor.id))
+            db.add(Hotel(name=name, aliases=aliases, bus_stop=stops_by_name[stop_name], city_id=obzor.id))
 
         if not db.query(User).filter(User.username == "presadmin").first():
             db.add(User(username="presadmin", hashed_password=hash_password("presko06"), role=UserRole.admin))
@@ -150,6 +150,7 @@ def seed() -> None:
                 "cruise_date": date(2026, 6, 21),
                 "cruise_time": time(9, 0),
                 "num_adults": 2,
+                "num_children": 0,
                 "booking_number": "GYG-SB-1001",
                 "gyg_ref": "GYGBLHQKWF67",
                 "total_price": "170 EUR",
@@ -163,6 +164,28 @@ def seed() -> None:
                 "warning_note": "",
             },
             {
+                "subject": "Afternoon VIP Catamaran Booking Confirmation",
+                "sender_email": "customer-children@reply.getyourguide.com",
+                "sender_name": "Christian Gelbe-Haussen",
+                "detected_hotel": db.query(Hotel).filter(Hotel.name == "Best Western / Sveshest").first(),
+                "booking_type": "AFTERNOON",
+                "cruise_date": date(2026, 7, 12),
+                "cruise_time": time(14, 30),
+                "num_adults": 1,
+                "num_children": 1,
+                "booking_number": "GYG-SB-1001C",
+                "gyg_ref": "GYGCHILD1001",
+                "total_price": "210 EUR",
+                "customer_phone": "+491234567890",
+                "detected_language": "en",
+                "raw_customer_name_extraction": "Christian Gelbe-Haussen",
+                "raw_hotel_extraction": "Best Western / Sveshest",
+                "extraction_source": "options_field",
+                "status": EmailStatus.pending,
+                "received_at": datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=5),
+                "warning_note": "",
+            },
+            {
                 "subject": "Obzor & Old Nessebar VIP Catamaran Booking Confirmation",
                 "sender_email": "customer-obzor@reply.getyourguide.com",
                 "sender_name": "Sofia Martin",
@@ -171,6 +194,7 @@ def seed() -> None:
                 "cruise_date": date(2026, 7, 10),
                 "cruise_time": time(10, 30),
                 "num_adults": 4,
+                "num_children": 0,
                 "booking_number": "GYG-OB-2001",
                 "gyg_ref": "GYGOBZ12345",
                 "total_price": "320 EUR",
@@ -192,6 +216,7 @@ def seed() -> None:
                 "cruise_date": date(2026, 9, 3),
                 "cruise_time": time(18, 30),
                 "num_adults": 3,
+                "num_children": 0,
                 "booking_number": "GYG-SB-1002",
                 "gyg_ref": "GYGSUNSET99",
                 "total_price": "255 EUR",
@@ -225,6 +250,7 @@ def seed() -> None:
                 cruise_date=item["cruise_date"],
                 cruise_time=item["cruise_time"],
                 num_adults=item["num_adults"],
+                num_children=item.get("num_children"),
                 customer_phone=item["customer_phone"],
                 booking_number=item["booking_number"],
                 gyg_ref=item["gyg_ref"],
@@ -237,6 +263,8 @@ def seed() -> None:
                 warning_note=item["warning_note"],
                 sent_at=(item["received_at"] + timedelta(minutes=25)) if item["status"] == EmailStatus.sent else None,
             )
+            email.detected_hotel = detected_hotel
+            email.assigned_bus_stop = bus_stop
             if bus_stop:
                 resolution = resolve_pickup_schedule(db, bus_stop, email.booking_type, email.cruise_date)
                 email.pickup_time_text = resolution.schedule.pickup_time.strftime("%H:%M") if resolution.schedule else MISSING_PICKUP_TIME_PLACEHOLDER

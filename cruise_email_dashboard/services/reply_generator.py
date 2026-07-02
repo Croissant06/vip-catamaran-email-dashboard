@@ -23,7 +23,7 @@ PICKUP_ADJUSTMENT_COPY = {
 OLD_NESSEBAR_PORT_TEMPLATES = {
     "en": """Dear {customer_name},
 
-We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, for {num_adults}!
+We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, for {participants}!
 
 As you have selected the Passenger Terminal in Old Nessebar, please make your way directly to the port in the Old Town of Nessebar. Our team will be there to meet you.
 
@@ -34,7 +34,7 @@ VIP Catamaran
 """,
     "es": """Estimado/a {customer_name},
 
-Le agradecemos su reserva para {cruise_date}, {cruise_day}, {booking_type}, para {num_adults}!
+Le agradecemos su reserva para {cruise_date}, {cruise_day}, {booking_type}, para {participants}!
 
 Como ha seleccionado la Terminal de Pasajeros en el casco antiguo de Nessebar, por favor dirijase directamente al puerto en el casco antiguo de Nessebar. Nuestro equipo estara alli para recibirle.
 
@@ -45,7 +45,7 @@ VIP Catamaran
 """,
     "fr": """Cher/Chere {customer_name},
 
-Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {booking_type}, pour {num_adults}!
+Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {booking_type}, pour {participants}!
 
 Comme vous avez selectionne le terminal passagers du vieux Nessebar, veuillez vous rendre directement au port dans la vieille ville de Nessebar. Notre equipe sera sur place pour vous accueillir.
 
@@ -56,7 +56,7 @@ VIP Catamaran
 """,
     "de": """Sehr geehrte/r {customer_name},
 
-Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fuer {num_adults}!
+Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fuer {participants}!
 
 Da Sie das Passenger Terminal in der Altstadt von Nessebar gewaehlt haben, begeben Sie sich bitte direkt zum Hafen in der Altstadt von Nessebar. Unser Team wird Sie dort empfangen.
 
@@ -67,7 +67,7 @@ VIP Catamaran
 """,
     "it": """Gentile {customer_name},
 
-La ringraziamo per la sua prenotazione per {cruise_date}, {cruise_day}, {booking_type}, per {num_adults}!
+La ringraziamo per la sua prenotazione per {cruise_date}, {cruise_day}, {booking_type}, per {participants}!
 
 Poiche ha selezionato il Terminal Passeggeri della Citta Vecchia di Nessebar, la preghiamo di recarsi direttamente al porto nel centro storico di Nessebar. Il nostro team sara li per accoglierla.
 
@@ -78,7 +78,7 @@ VIP Catamaran
 """,
     "el": """Agapite/i {customer_name},
 
-Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, {booking_type}, gia {num_adults}!
+Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, {booking_type}, gia {participants}!
 
 Kathos echete epilexei to Passenger Terminal stin Palia Nesebar, sas parakaloume na katefthyntheite apeutheias sto limani stin Palia Poli tis Nesebar. I omada mas tha einai ekei gia na sas ypodechthei.
 
@@ -197,6 +197,33 @@ def _pickup_instructions(email_log: EmailLog, language: str) -> str:
     return _legacy_sunny_beach_pickup_instructions(email_log, language)
 
 
+def _pluralized_count(count: int, singular: str, plural: str) -> str:
+    return f"{count} {singular if count == 1 else plural}"
+
+
+def _participants_text(email_log: EmailLog, language: str) -> str:
+    adults = int(email_log.num_adults or 0)
+    children = int(email_log.num_children or 0)
+
+    terms = {
+        "en": ("adult", "adults", "child", "children", "and"),
+        "es": ("adulto", "adultos", "nino", "ninos", "y"),
+        "fr": ("adulte", "adultes", "enfant", "enfants", "et"),
+        "de": ("Erwachsener", "Erwachsene", "Kind", "Kinder", "und"),
+        "it": ("adulto", "adulti", "bambino", "bambini", "e"),
+        "el": ("adult", "adults", "child", "children", "kai"),
+    }
+    adult_singular, adult_plural, child_singular, child_plural, joiner = terms.get(
+        language,
+        terms["en"],
+    )
+    adult_part = _pluralized_count(adults, adult_singular, adult_plural)
+    if children <= 0:
+        return adult_part
+    child_part = _pluralized_count(children, child_singular, child_plural)
+    return f"{adult_part} {joiner} {child_part}"
+
+
 def _format_context(email_log: EmailLog) -> dict[str, str]:
     stop = email_log.assigned_bus_stop
     hotel = email_log.detected_hotel
@@ -209,6 +236,8 @@ def _format_context(email_log: EmailLog) -> dict[str, str]:
         "cruise_day": cruise_day,
         "booking_type": _booking_type_label(email_log),
         "num_adults": str(email_log.num_adults or ""),
+        "num_children": str(email_log.num_children or 0),
+        "participants": _participants_text(email_log, language),
         "hotel_name": hotel.name if hotel else email_log.raw_hotel_extraction or "your hotel",
         "bus_stop_name": stop.name if stop else "",
         "bus_stop_address": stop.address if stop else "",

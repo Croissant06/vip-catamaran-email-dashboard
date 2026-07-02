@@ -1,6 +1,6 @@
 Dear {customer_name},
 
-We thank you for your booking for {cruise_date}, {cruise_day}, for {num_adults}!
+We thank you for your booking for {cruise_date}, {cruise_day}, for {participants}!
 
 Please note that Pomorie pickups operate on TUESDAY and FRIDAY mornings only. Your pickup will be at {bus_stop_name} at {pickup_time}.
 

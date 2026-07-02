@@ -1,6 +1,6 @@
 Caro/a {customer_name},
 
-La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, {booking_type}, per {num_adults}.
+La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, {booking_type}, per {participants}.
 
 {pickup_adjustment_paragraph}
 

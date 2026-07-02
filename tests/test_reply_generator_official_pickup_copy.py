@@ -15,6 +15,8 @@ def make_email(
     language: str = "en",
     pickup_time: str = "08:20",
     cruise_time_value: time | None = None,
+    num_adults: int = 2,
+    num_children: int | None = 0,
 ) -> EmailLog:
     city = City(name="Sunny Beach")
     stop = BusStop(
@@ -42,7 +44,8 @@ def make_email(
         booking_type="MORNING",
         cruise_date=date(2026, 6, 10),
         cruise_time=cruise_time_value,
-        num_adults=2,
+        num_adults=num_adults,
+        num_children=num_children,
         pickup_time_text=pickup_time,
         raw_hotel_extraction=hotel.name,
     )
@@ -54,6 +57,48 @@ def make_email(
 
 
 class OfficialPickupCopyTests(unittest.TestCase):
+    def test_adults_only_booking_uses_pluralized_participants_text(self) -> None:
+        email = make_email(
+            stop_name="Vlas - Petrol Station",
+            stop_description="legacy",
+            vehicle_type=VehicleType.doubledecker,
+            language="en",
+            num_adults=2,
+            num_children=0,
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn("for 2 adults!", reply)
+
+    def test_booking_with_one_child_uses_singular_child_in_participants_text(self) -> None:
+        email = make_email(
+            stop_name="Vlas - Petrol Station",
+            stop_description="legacy",
+            vehicle_type=VehicleType.doubledecker,
+            language="en",
+            num_adults=2,
+            num_children=1,
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn("for 2 adults and 1 child!", reply)
+
+    def test_booking_with_multiple_children_uses_plural_children_in_participants_text(self) -> None:
+        email = make_email(
+            stop_name="Vlas - Petrol Station",
+            stop_description="legacy",
+            vehicle_type=VehicleType.doubledecker,
+            language="en",
+            num_adults=1,
+            num_children=2,
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn("for 1 adult and 2 children!", reply)
+
     def test_english_doubledecker_stop_uses_official_vlas_wording(self) -> None:
         email = make_email(
             stop_name="Vlas - Petrol Station",

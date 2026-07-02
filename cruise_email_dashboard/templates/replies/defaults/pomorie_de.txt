@@ -1,6 +1,6 @@
 Sehr geehrte/r {customer_name},
 
-Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, fuer {num_adults}.
+Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, fuer {participants}.
 
 Bitte beachten Sie, dass Abholungen in Pomorie nur am DIENSTAG und FREITAG morgens stattfinden. Ihre Abholung ist an {bus_stop_name} um {pickup_time}.
 

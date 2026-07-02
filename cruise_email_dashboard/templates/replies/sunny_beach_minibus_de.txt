@@ -1,6 +1,6 @@
 Sehr geehrte/r {customer_name},
 
-Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fuer {num_adults}.
+Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, {booking_type}, fuer {participants}.
 
 {pickup_instructions}
 

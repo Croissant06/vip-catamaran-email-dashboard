@@ -1,6 +1,6 @@
 Dear {customer_name},
 
-We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, for {num_adults}!
+We thank you for your booking for {cruise_date}, {cruise_day}, {booking_type}, for {participants}!
 
 {pickup_adjustment_paragraph}
 

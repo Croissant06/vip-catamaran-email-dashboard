@@ -1,6 +1,6 @@
 Cher/Chere {customer_name},
 
-Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {booking_type}, pour {num_adults}.
+Nous vous remercions pour votre reservation du {cruise_date}, {cruise_day}, {booking_type}, pour {participants}.
 
 {pickup_adjustment_paragraph}
 

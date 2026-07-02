@@ -1,6 +1,6 @@
 Agapite/i {customer_name},
 
-Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, {booking_type}, gia {num_adults}.
+Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, {booking_type}, gia {participants}.
 
 {pickup_instructions}
 

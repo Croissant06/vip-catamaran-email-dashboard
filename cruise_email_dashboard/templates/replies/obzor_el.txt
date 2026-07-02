@@ -1,6 +1,6 @@
 Agapite/i {customer_name},
 
-Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, gia {num_adults}.
+Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, gia {participants}.
 
 O odigos mas kai to meso metaforas tha sas perimenoun exo apo to {bus_stop_name} stis {pickup_time}. Tha anagnorisete to oxima apo tin pinakida "VIP Catamaran" sto brostino parathyro.
 
