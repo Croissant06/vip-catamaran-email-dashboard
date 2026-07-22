@@ -11,6 +11,15 @@ VEHICLE_MARKING_SENTENCE = {
     "el": "Το όχημά μας φέρει πινακίδα με την ένδειξη «VIP Catamaran», ώστε να το αναγνωρίζετε εύκολα.",
 }
 
+VEHICLE_RECOGNITION_MARKERS = {
+    "en": (("vip catamaran",), ("sign",), ("recognize", "recognise", "identify")),
+    "de": (("vip catamaran",), ("schild",), ("erkennen",)),
+    "es": (("vip catamaran",), ("cartel",), ("identific", "reconoc")),
+    "fr": (("vip catamaran",), ("panneau",), ("reconna",)),
+    "it": (("vip catamaran",), ("cartello",), ("riconosc",)),
+    "el": (("vip catamaran",), ("πινακ",), ("αναγνωρ",)),
+}
+
 OFFICIAL_PICKUP_COPY = {
     "en": {
         "Vlas - Petrol Station": 'Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas. Our big red London double-decker bus will be there at {pickup_time} to collect you.',
@@ -164,10 +173,20 @@ def _arrival_time_for_cruise(cruise_time: time | None, fallback: str) -> str:
     return (cruise_moment - timedelta(minutes=10)).strftime("%H:%M")
 
 
+def _has_vehicle_recognition_copy(rendered: str, language_code: str) -> bool:
+    marker_groups = VEHICLE_RECOGNITION_MARKERS.get(language_code, VEHICLE_RECOGNITION_MARKERS["en"])
+    normalized = rendered.casefold()
+    return all(any(marker in normalized for marker in group) for group in marker_groups)
+
+
 def render_official_pickup_copy(stop_name: str, language: str, pickup_time: str, cruise_time: time | None = None) -> str | None:
     language_code = (language or "en").lower()
     templates = OFFICIAL_PICKUP_COPY.get(language_code) or OFFICIAL_PICKUP_COPY["en"]
-    template = templates.get(stop_name) or OFFICIAL_PICKUP_COPY["en"].get(stop_name)
+    template = templates.get(stop_name)
+    template_language = language_code
+    if not template:
+        template = OFFICIAL_PICKUP_COPY["en"].get(stop_name)
+        template_language = "en"
     if not template:
         return None
     cruise_time_text = _format_time(cruise_time, pickup_time)
@@ -177,5 +196,7 @@ def render_official_pickup_copy(stop_name: str, language: str, pickup_time: str,
         cruise_time=cruise_time_text,
         arrival_time=arrival_time_text,
     )
+    if _has_vehicle_recognition_copy(rendered, template_language):
+        return rendered
     vehicle_sentence = VEHICLE_MARKING_SENTENCE.get(language_code, VEHICLE_MARKING_SENTENCE["en"])
     return f"{rendered} {vehicle_sentence}"

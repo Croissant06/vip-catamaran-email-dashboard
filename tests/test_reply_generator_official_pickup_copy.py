@@ -120,6 +120,7 @@ class OfficialPickupCopyTests(unittest.TestCase):
             VEHICLE_MARKING_SENTENCE["en"],
             reply,
         )
+        self.assertEqual(reply.count(VEHICLE_MARKING_SENTENCE["en"]), 1)
 
     def test_english_minibus_stop_uses_official_aqua_paradise_wording(self) -> None:
         email = make_email(
@@ -136,6 +137,11 @@ class OfficialPickupCopyTests(unittest.TestCase):
             'Please find attached a link to the pickup point you have selected. Our transport will be outside Aqua Paradise Hotel at 08:40 to collect you. You can identify our minibus by the "VIP Catamaran" sign on the front window.',
             reply,
         )
+        self.assertEqual(
+            reply.count('You can identify our minibus by the "VIP Catamaran" sign on the front window.'),
+            1,
+        )
+        self.assertNotIn(VEHICLE_MARKING_SENTENCE["en"], reply)
 
     def test_english_meet_at_catamaran_uses_official_wording(self) -> None:
         email = make_email(
@@ -173,6 +179,7 @@ class OfficialPickupCopyTests(unittest.TestCase):
             VEHICLE_MARKING_SENTENCE["es"],
             reply,
         )
+        self.assertEqual(reply.count(VEHICLE_MARKING_SENTENCE["es"]), 1)
 
     def test_english_best_western_stop_uses_official_wording(self) -> None:
         email = make_email(
@@ -209,10 +216,8 @@ class OfficialPickupCopyTests(unittest.TestCase):
             "VIP Catamaran",
             reply,
         )
-        self.assertIn(
-            VEHICLE_MARKING_SENTENCE["de"],
-            reply,
-        )
+        self.assertIn("Frontscheibe", reply)
+        self.assertNotIn(VEHICLE_MARKING_SENTENCE["de"], reply)
 
     def test_obzor_rendered_draft_includes_vehicle_recognition_sentence(self) -> None:
         email = make_email(
