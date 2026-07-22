@@ -2,6 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, time, timedelta
 
+VEHICLE_MARKING_SENTENCE = {
+    "en": "Our vehicle is marked with a 'VIP Catamaran' sign, so you can recognize it easily.",
+    "de": 'Unser Fahrzeug ist mit einem Schild „VIP Catamaran" gekennzeichnet, damit Sie es leicht erkennen können.',
+    "es": "Nuestro vehículo lleva un cartel con el nombre «VIP Catamaran», para que pueda reconocerlo fácilmente.",
+    "fr": "Notre véhicule porte un panneau « VIP Catamaran », afin que vous puissiez le reconnaître facilement.",
+    "it": "Il nostro mezzo è contrassegnato da un cartello con la scritta «VIP Catamaran», così potrà riconoscerlo facilmente.",
+    "el": "Το όχημά μας φέρει πινακίδα με την ένδειξη «VIP Catamaran», ώστε να το αναγνωρίζετε εύκολα.",
+}
+
 OFFICIAL_PICKUP_COPY = {
     "en": {
         "Vlas - Petrol Station": 'Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas. Our big red London double-decker bus will be there at {pickup_time} to collect you.',
@@ -163,8 +172,10 @@ def render_official_pickup_copy(stop_name: str, language: str, pickup_time: str,
         return None
     cruise_time_text = _format_time(cruise_time, pickup_time)
     arrival_time_text = _arrival_time_for_cruise(cruise_time, pickup_time)
-    return template.format(
+    rendered = template.format(
         pickup_time=pickup_time,
         cruise_time=cruise_time_text,
         arrival_time=arrival_time_text,
     )
+    vehicle_sentence = VEHICLE_MARKING_SENTENCE.get(language_code, VEHICLE_MARKING_SENTENCE["en"])
+    return f"{rendered} {vehicle_sentence}"

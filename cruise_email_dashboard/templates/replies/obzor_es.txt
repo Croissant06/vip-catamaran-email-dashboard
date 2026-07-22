@@ -1,4 +1,4 @@
-Estimado/a {customer_name},
+﻿Estimado/a {customer_name},
 
 Le agradecemos su reserva para {cruise_date}, {cruise_day}, para {participants}.
 
@@ -8,3 +8,5 @@ Le rogamos responder a este correo para confirmar el punto y la hora de recogida
 
 Saludos cordiales,
 VIP Catamaran
+
+

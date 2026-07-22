@@ -4,7 +4,10 @@ from pathlib import Path
 import re
 
 from cruise_email_dashboard.database.models import EmailLog, VehicleType
-from cruise_email_dashboard.services.official_pickup_copy import render_official_pickup_copy
+from cruise_email_dashboard.services.official_pickup_copy import (
+    VEHICLE_MARKING_SENTENCE,
+    render_official_pickup_copy,
+)
 
 REPLIES_DIR = Path(__file__).resolve().parents[1] / "templates" / "replies"
 SUPPORTED_LANGUAGES = {"en", "es", "fr", "de", "it", "el"}
@@ -162,28 +165,31 @@ def _legacy_sunny_beach_pickup_instructions(email_log: EmailLog, language: str) 
         return ""
     pickup_time = email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER
     description = stop.description or stop.name
+    vehicle_sentence = VEHICLE_MARKING_SENTENCE["en"]
     if stop.vehicle_type == VehicleType.minibus:
         legacy_copy = {
             "en": "Our minibus will collect you from {bus_stop_name} at {pickup_time}.",
-            "es": "Nuestro minibús le recogerá en {bus_stop_name} a las {pickup_time}.",
-            "fr": "Notre minibus viendra vous chercher à {bus_stop_name} à {pickup_time}.",
+            "es": "Nuestro minibÃºs le recogerÃ¡ en {bus_stop_name} a las {pickup_time}.",
+            "fr": "Notre minibus viendra vous chercher Ã  {bus_stop_name} Ã  {pickup_time}.",
             "de": "Unser Minibus holt Sie um {pickup_time} an {bus_stop_name} ab.",
-            "it": "Il nostro minibus la preleverà da {bus_stop_name} alle {pickup_time}.",
-            "el": "Το minibus μας θα σας παραλάβει από το {bus_stop_name} στις {pickup_time}.",
+            "it": "Il nostro minibus la preleverÃ  da {bus_stop_name} alle {pickup_time}.",
+            "el": "Î¤Î¿ minibus Î¼Î±Ï‚ Î¸Î± ÏƒÎ±Ï‚ Ï€Î±ÏÎ±Î»Î¬Î²ÎµÎ¹ Î±Ï€ÏŒ Ï„Î¿ {bus_stop_name} ÏƒÏ„Î¹Ï‚ {pickup_time}.",
         }
         template = legacy_copy.get(language, legacy_copy["en"])
-        return template.format(bus_stop_name=stop.name, pickup_time=pickup_time)
+        rendered = template.format(bus_stop_name=stop.name, pickup_time=pickup_time)
+        return f"{rendered} {vehicle_sentence}"
 
     legacy_copy = {
         "en": "Please find attached a link to the pickup point. It is {bus_stop_description}. Our big red London double-decker bus will be there at {pickup_time} to collect you.",
-        "es": "Adjuntamos el enlace al punto de recogida. Es {bus_stop_description}. Nuestro gran autobús rojo de dos pisos estilo Londres estará allí a las {pickup_time} para recogerle.",
-        "fr": "Veuillez trouver ci-dessous le lien vers le point de prise en charge. Il s'agit de {bus_stop_description}. Notre grand bus rouge à impériale de style londonien sera là à {pickup_time} pour venir vous chercher.",
-        "de": "Hier finden Sie den Link zum Abholpunkt. Es ist {bus_stop_description}. Unser großer roter Londoner Doppeldeckerbus wird dort um {pickup_time} auf Sie warten.",
-        "it": "Di seguito trova il link al punto di prelievo. Si tratta di {bus_stop_description}. Il nostro grande autobus rosso a due piani stile Londra sarà lì alle {pickup_time} per venirla a prendere.",
-        "el": "Παρακαλώ βρείτε παρακάτω τον σύνδεσμο για το σημείο παραλαβής. Είναι {bus_stop_description}. Το μεγάλο κόκκινο λονδρέζικο διώροφο λεωφορείο μας θα είναι εκεί στις {pickup_time} για να σας παραλάβει.",
+        "es": "Adjuntamos el enlace al punto de recogida. Es {bus_stop_description}. Nuestro gran autobÃºs rojo de dos pisos estilo Londres estarÃ¡ allÃ­ a las {pickup_time} para recogerle.",
+        "fr": "Veuillez trouver ci-dessous le lien vers le point de prise en charge. Il s'agit de {bus_stop_description}. Notre grand bus rouge Ã  impÃ©riale de style londonien sera lÃ  Ã  {pickup_time} pour venir vous chercher.",
+        "de": "Hier finden Sie den Link zum Abholpunkt. Es ist {bus_stop_description}. Unser groÃŸer roter Londoner Doppeldeckerbus wird dort um {pickup_time} auf Sie warten.",
+        "it": "Di seguito trova il link al punto di prelievo. Si tratta di {bus_stop_description}. Il nostro grande autobus rosso a due piani stile Londra sarÃ  lÃ¬ alle {pickup_time} per venirla a prendere.",
+        "el": "Î Î±ÏÎ±ÎºÎ±Î»ÏŽ Î²ÏÎµÎ¯Ï„Îµ Ï€Î±ÏÎ±ÎºÎ¬Ï„Ï‰ Ï„Î¿Î½ ÏƒÏÎ½Î´ÎµÏƒÎ¼Î¿ Î³Î¹Î± Ï„Î¿ ÏƒÎ·Î¼ÎµÎ¯Î¿ Ï€Î±ÏÎ±Î»Î±Î²Î®Ï‚. Î•Î¯Î½Î±Î¹ {bus_stop_description}. Î¤Î¿ Î¼ÎµÎ³Î¬Î»Î¿ ÎºÏŒÎºÎºÎ¹Î½Î¿ Î»Î¿Î½Î´ÏÎ­Î¶Î¹ÎºÎ¿ Î´Î¹ÏŽÏÎ¿Ï†Î¿ Î»ÎµÏ‰Ï†Î¿ÏÎµÎ¯Î¿ Î¼Î±Ï‚ Î¸Î± ÎµÎ¯Î½Î±Î¹ ÎµÎºÎµÎ¯ ÏƒÏ„Î¹Ï‚ {pickup_time} Î³Î¹Î± Î½Î± ÏƒÎ±Ï‚ Ï€Î±ÏÎ±Î»Î¬Î²ÎµÎ¹.",
     }
     template = legacy_copy.get(language, legacy_copy["en"])
-    return template.format(bus_stop_description=description, pickup_time=pickup_time)
+    rendered = template.format(bus_stop_description=description, pickup_time=pickup_time)
+    return f"{rendered} {vehicle_sentence}"
 
 
 def _pickup_instructions(email_log: EmailLog, language: str) -> str:
@@ -242,6 +248,7 @@ def _format_context(email_log: EmailLog) -> dict[str, str]:
         "bus_stop_name": stop.name if stop else "",
         "bus_stop_address": stop.address if stop else "",
         "bus_stop_description": stop.description if stop and stop.description else (stop.name if stop else ""),
+        "vehicle_recognition_sentence": VEHICLE_MARKING_SENTENCE.get(language, VEHICLE_MARKING_SENTENCE["en"]),
         "pickup_instructions": _pickup_instructions(email_log, language),
         "pickup_adjustment_paragraph": _pickup_adjustment_paragraph(email_log, language),
         "pickup_time": email_log.pickup_time_text or MISSING_PICKUP_TIME_PLACEHOLDER,

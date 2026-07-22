@@ -1,4 +1,4 @@
-Sehr geehrte/r {customer_name},
+﻿Sehr geehrte/r {customer_name},
 
 Vielen Dank fuer Ihre Buchung am {cruise_date}, {cruise_day}, fuer {participants}.
 
@@ -8,3 +8,5 @@ Bitte antworten Sie auf diese E-Mail, um Abholpunkt und Uhrzeit zu bestaetigen.
 
 Mit freundlichen Gruessen,
 VIP Catamaran
+
+

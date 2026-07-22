@@ -1,8 +1,8 @@
-Caro/a {customer_name},
+﻿Caro/a {customer_name},
 
 La ringraziamo per la prenotazione del {cruise_date}, {cruise_day}, per {participants}.
 
-La preghiamo di notare che i prelievi da Pomorie operano solo il MARTEDI e il VENERDI mattina. Il suo prelievo sara a {bus_stop_name} alle {pickup_time}.
+La preghiamo di notare che i prelievi da Pomorie operano solo il MARTEDI e il VENERDI mattina. Il suo prelievo sara a {bus_stop_name} alle {pickup_time}. {vehicle_recognition_sentence}
 
 {maps_url}
 
@@ -10,3 +10,4 @@ La preghiamo di rispondere a questa e-mail per confermare punto e orario di prel
 
 Cordiali saluti,
 VIP Catamaran
+

@@ -1,4 +1,4 @@
-Agapite/i {customer_name},
+﻿Agapite/i {customer_name},
 
 Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, gia {participants}.
 
@@ -8,3 +8,5 @@ Sas parakaloume na apantisete se auto to email gia na epivevaiosete to simio kai
 
 Me ektimisi,
 VIP Catamaran
+
+

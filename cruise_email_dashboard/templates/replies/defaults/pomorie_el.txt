@@ -1,8 +1,8 @@
-Agapite/i {customer_name},
+﻿Agapite/i {customer_name},
 
 Sas efcharistoume gia tin kratisi sas gia {cruise_date}, {cruise_day}, gia {participants}.
 
-Parakalo simeioste oti oi paralaves apo to Pomorie leitourgoun mono tin TRITI kai tin PARASKEVI to proi. I paralavi sas tha einai sto {bus_stop_name} stis {pickup_time}.
+Parakalo simeioste oti oi paralaves apo to Pomorie leitourgoun mono tin TRITI kai tin PARASKEVI to proi. I paralavi sas tha einai sto {bus_stop_name} stis {pickup_time}. {vehicle_recognition_sentence}
 
 {maps_url}
 
@@ -10,3 +10,4 @@ Sas parakaloume na apantisete se auto to email gia na epivevaiosete to simio kai
 
 Me ektimisi,
 VIP Catamaran
+

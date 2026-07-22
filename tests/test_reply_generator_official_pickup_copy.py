@@ -4,6 +4,7 @@ import unittest
 from datetime import date, time
 
 from cruise_email_dashboard.database.models import BusStop, City, EmailLog, Hotel, VehicleType
+from cruise_email_dashboard.services.official_pickup_copy import VEHICLE_MARKING_SENTENCE
 from cruise_email_dashboard.services.reply_generator import build_reply, regenerate_email_draft
 
 
@@ -17,8 +18,9 @@ def make_email(
     cruise_time_value: time | None = None,
     num_adults: int = 2,
     num_children: int | None = 0,
+    city_name: str = "Sunny Beach",
 ) -> EmailLog:
-    city = City(name="Sunny Beach")
+    city = City(name=city_name)
     stop = BusStop(
         name=stop_name,
         address=stop_name,
@@ -111,7 +113,11 @@ class OfficialPickupCopyTests(unittest.TestCase):
         reply, _, _ = build_reply(email)
 
         self.assertIn(
-            'Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas. Our big red London double-decker bus will be there at 08:20 to collect you.',
+            "Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas. Our big red London double-decker bus will be there at 08:20 to collect you.",
+            reply,
+        )
+        self.assertIn(
+            VEHICLE_MARKING_SENTENCE["en"],
             reply,
         )
 
@@ -164,7 +170,7 @@ class OfficialPickupCopyTests(unittest.TestCase):
             reply,
         )
         self.assertIn(
-            "Nuestro gran autobús rojo de dos pisos estilo Londres estará allí a las 18:30 para recogerle.",
+            VEHICLE_MARKING_SENTENCE["es"],
             reply,
         )
 
@@ -196,11 +202,76 @@ class OfficialPickupCopyTests(unittest.TestCase):
         reply, _, _ = build_reply(email)
 
         self.assertIn(
-            'Hier finden Sie den Link zu dem von Ihnen ausgewählten Abholpunkt.',
+            "09:40",
             reply,
         )
         self.assertIn(
-            'Unser Transfer wird Sie dort um 09:40 abholen.',
+            "VIP Catamaran",
+            reply,
+        )
+        self.assertIn(
+            VEHICLE_MARKING_SENTENCE["de"],
+            reply,
+        )
+
+    def test_obzor_rendered_draft_includes_vehicle_recognition_sentence(self) -> None:
+        email = make_email(
+            stop_name="Sunrise All Suite Resort",
+            stop_description="legacy",
+            vehicle_type=VehicleType.guide,
+            language="en",
+            pickup_time="09:50",
+            city_name="Obzor",
+        )
+        email.booking_type = "OBZOR"
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn(
+            'You can identify our vehicle by the "VIP Catamaran" sign on the front window.',
+            reply,
+        )
+        self.assertNotIn(
+            VEHICLE_MARKING_SENTENCE["en"],
+            reply,
+        )
+
+    def test_pomorie_rendered_draft_includes_vehicle_recognition_sentence(self) -> None:
+        email = make_email(
+            stop_name="Saint George",
+            stop_description="legacy",
+            vehicle_type=VehicleType.minibus,
+            language="en",
+            pickup_time="08:05",
+            city_name="Pomorie",
+        )
+        email.booking_type = "POMORIE"
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn(
+            VEHICLE_MARKING_SENTENCE["en"],
+            reply,
+        )
+
+    def test_unmapped_stop_fallback_includes_vehicle_recognition_sentence(self) -> None:
+        email = make_email(
+            stop_name="Custom Harbor Stop",
+            stop_description="the custom harbor bus stop",
+            vehicle_type=VehicleType.doubledecker,
+            language="en",
+            pickup_time="12:10",
+            city_name="Sunny Beach",
+        )
+
+        reply, _, _ = build_reply(email)
+
+        self.assertIn(
+            "Please find attached a link to the pickup point. It is the custom harbor bus stop.",
+            reply,
+        )
+        self.assertIn(
+            VEHICLE_MARKING_SENTENCE["en"],
             reply,
         )
 
