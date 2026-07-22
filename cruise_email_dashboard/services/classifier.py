@@ -1275,7 +1275,7 @@ def classify_email(
         score = max(score, stop_score)
         extraction_source = "customer_selected_stop"
     special_flag = COMMERCIAL_VENUE_FLAGS.get(_normalize_token(booking.raw_hotel_extraction))
-    if special_flag:
+    if special_flag and hotel is None:
         matched_stop = None
         hotel = None
         score = 0.0
