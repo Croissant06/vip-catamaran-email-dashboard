@@ -20,6 +20,11 @@ VEHICLE_RECOGNITION_MARKERS = {
     "el": (("vip catamaran",), ("πινακ",), ("αναγνωρ",)),
 }
 
+# This pickup point is a direct meet-at-the-boat instruction, not a vehicle stop.
+# Keep the no-vehicle rule explicit so future wording edits do not accidentally
+# reintroduce the shared vehicle-sign sentence in any language.
+NO_VEHICLE_PICKUP_POINTS = {"Meet at Catamaran"}
+
 OFFICIAL_PICKUP_COPY = {
     "en": {
         "Vlas - Petrol Station": 'Please find attached a link to the pickup point that you have selected. It is the bus stop on the main road at the roundabout next to the petrol station in Sveti Vlas. Our big red London double-decker bus will be there at {pickup_time} to collect you.',
@@ -196,6 +201,8 @@ def render_official_pickup_copy(stop_name: str, language: str, pickup_time: str,
         cruise_time=cruise_time_text,
         arrival_time=arrival_time_text,
     )
+    if stop_name in NO_VEHICLE_PICKUP_POINTS:
+        return rendered
     if _has_vehicle_recognition_copy(rendered, template_language):
         return rendered
     vehicle_sentence = VEHICLE_MARKING_SENTENCE.get(language_code, VEHICLE_MARKING_SENTENCE["en"])

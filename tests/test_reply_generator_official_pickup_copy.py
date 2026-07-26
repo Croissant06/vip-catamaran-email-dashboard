@@ -159,6 +159,10 @@ class OfficialPickupCopyTests(unittest.TestCase):
             "Please find attached a link to the exact location of our catamaran. Please be there by 08:50 as we sail away at 09:00.",
             reply,
         )
+        self.assertNotIn(
+            VEHICLE_MARKING_SENTENCE["en"],
+            reply,
+        )
 
     def test_spanish_doubledecker_stop_matches_new_structure(self) -> None:
         email = make_email(
