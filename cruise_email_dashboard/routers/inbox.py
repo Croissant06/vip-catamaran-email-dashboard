@@ -198,12 +198,16 @@ def email_detail(
 def send_email_reply(
     email_id: int,
     request: Request,
+    draft_reply: str | None = Form(default=None),
     return_to: str = Query(default=""),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     normalized_return_to = _normalized_return_to(return_to)
     email = db.query(EmailLog).filter(EmailLog.id == email_id).first()
+    existing_draft_reply = email.draft_reply or ""
+    if draft_reply is not None and draft_reply.strip() != existing_draft_reply.strip():
+        email.draft_reply = draft_reply
     if email.status == EmailStatus.cancelled:
         if _wants_json_response(request):
             return JSONResponse({"ok": False, "status": email.status.value, "send_error": ""}, status_code=400)
